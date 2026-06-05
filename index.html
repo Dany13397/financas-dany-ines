@@ -498,13 +498,14 @@ const dtLabel = d => {
 async function boot() {
   show('loading');
   try {
-    const { data: { session }, error } = await sb.auth.getSession();
+    const timeout = new Promise((_,reject) => setTimeout(() => reject(new Error('Timeout: sem resposta do Supabase após 8s')), 8000));
+    const { data: { session }, error } = await Promise.race([sb.auth.getSession(), timeout]);
     if (error) throw error;
     if (!session) { show('auth'); return; }
     await loadApp(session);
   } catch(e) {
     document.getElementById('screen-loading').innerHTML =
-      `<p style="color:var(--red);text-align:center;padding:20px">Erro ao ligar ao servidor.<br><small style="color:var(--text2)">${e.message||e}</small><br><br><button class="btn" style="width:auto;padding:10px 24px" onclick="boot()">Tentar de novo</button></p>`;
+      `<p style="color:var(--red);text-align:center;padding:20px">Erro ao ligar ao servidor.<br><small style="color:var(--text2)">${e.message||e}</small><br><br><button class="btn" style="width:auto;padding:10px 24px" onclick="location.reload()">Tentar de novo</button></p>`;
   }
 }
 
