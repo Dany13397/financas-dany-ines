@@ -206,6 +206,7 @@
     <button class="nav-btn" onclick="switchTab('ativos',this)">💰 Ativos</button>
     <button class="nav-btn" onclick="switchTab('ines',this)" style="color:var(--ines)">👤 Inês</button>
     <button class="nav-btn" onclick="switchTab('dany',this)" style="color:var(--dany)">👤 Dany</button>
+    <button class="nav-btn" onclick="switchTab('casa',this)">🏠 Casa</button>
     <button class="nav-btn" onclick="switchTab('adicionar',this)">➕ Registar</button>
   </nav>
 
@@ -385,6 +386,68 @@
       </div>
     </div>
 
+    <!-- CASA -->
+    <div id="tab-casa" class="tab-panel">
+
+      <div class="cards-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px">
+        <div class="card"><div class="card-label">Preço Total da Casa</div><div class="card-value" id="casa-preco">—</div></div>
+        <div class="card"><div class="card-label">Já Pago</div><div class="card-value" style="color:var(--green)" id="casa-pago">—</div></div>
+        <div class="card"><div class="card-label">Total Extras</div><div class="card-value" style="color:var(--yellow)" id="casa-extras-total">—</div></div>
+        <div class="card"><div class="card-label">Objetivo de Poupança</div><div class="card-value" style="color:var(--accent)" id="casa-goal-display">—</div><div class="card-sub">usado na barra de progresso</div></div>
+      </div>
+
+      <!-- Detalhes da casa -->
+      <div class="form-section">
+        <h3>🏠 Detalhes da Casa</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Preço Total da Casa (€)</label>
+            <input type="number" id="casa-f-preco" placeholder="260000" step="1000">
+          </div>
+          <div class="form-group">
+            <label>Já Pago / Sinal (€)</label>
+            <input type="number" id="casa-f-pago" placeholder="2000" step="500">
+          </div>
+          <div class="form-group">
+            <label>Objetivo de Poupança (€)</label>
+            <input type="number" id="casa-f-goal" placeholder="ex: 60000" step="1000">
+            <span style="font-size:11px;color:var(--text2);margin-top:2px">valor que querem ter poupado para a entrada</span>
+          </div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="saveCasaDetails()">💾 Guardar Detalhes</button>
+        <div class="success-msg" id="casa-details-ok">✅ Guardado!</div>
+      </div>
+
+      <!-- Extras -->
+      <div class="form-section">
+        <h3>🛋️ Extras / Obras / Mobiliário</h3>
+        <div style="margin-bottom:16px" id="extras-list"></div>
+        <div class="form-grid" style="margin-bottom:12px">
+          <div class="form-group">
+            <label>Descrição</label>
+            <input type="text" id="extra-nome" placeholder="ex: Sofá, Cozinha, Obras...">
+          </div>
+          <div class="form-group">
+            <label>Custo estimado (€)</label>
+            <input type="number" id="extra-custo" placeholder="0" step="100">
+          </div>
+          <div class="form-group" style="justify-content:flex-end">
+            <label>&nbsp;</label>
+            <button class="btn" onclick="addExtra()">➕ Adicionar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumo -->
+      <div class="chart-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px">📋 Resumo de Custos</div>
+        <table class="asset-table">
+          <tbody id="casa-resumo-body"></tbody>
+        </table>
+      </div>
+
+    </div>
+
     <!-- REGISTAR -->
     <div id="tab-adicionar" class="tab-panel">
       <div class="form-section">
@@ -513,7 +576,9 @@ async function loadApp(session) {
   show('loading');
   // Load goal from localStorage (per-user key)
   const uid = session.user.id;
-  goal = parseFloat(localStorage.getItem('goal_'+uid) || '100000');
+  window._uid = uid;
+  loadCasaConfig(uid);
+  goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
   document.getElementById('goal-display').textContent = fmtShort(goal);
 
@@ -876,6 +941,107 @@ function initPerson(p) {
   tbody.appendChild(tr);
 }
 
+// ── Casa ─────────────────────────────────────────────────────
+let casaConfig = { preco: 260000, pago: 2000, goal: 60000, extras: [] };
+
+function loadCasaConfig(uid) {
+  const saved = localStorage.getItem('casa_' + uid);
+  if (saved) casaConfig = JSON.parse(saved);
+  else casaConfig = { preco: 260000, pago: 2000, goal: 60000, extras: [] };
+  // Sincroniza goal global com casaConfig
+  goal = casaConfig.goal;
+}
+
+function saveCasaConfig(uid) {
+  localStorage.setItem('casa_' + uid, JSON.stringify(casaConfig));
+}
+
+function saveCasaDetails() {
+  const preco = parseFloat(document.getElementById('casa-f-preco').value) || casaConfig.preco;
+  const pago  = parseFloat(document.getElementById('casa-f-pago').value)  || casaConfig.pago;
+  const g     = parseFloat(document.getElementById('casa-f-goal').value)  || casaConfig.goal;
+  casaConfig.preco = preco;
+  casaConfig.pago  = pago;
+  casaConfig.goal  = g;
+  goal = g;
+  saveCasaConfigCurrent();
+  renderCasaTab();
+  initDashboard();
+  const ok = document.getElementById('casa-details-ok');
+  ok.style.display = 'block';
+  setTimeout(() => ok.style.display = 'none', 2500);
+}
+
+function addExtra() {
+  const nome  = document.getElementById('extra-nome').value.trim();
+  const custo = parseFloat(document.getElementById('extra-custo').value);
+  if (!nome || isNaN(custo) || custo <= 0) return;
+  casaConfig.extras.push({ nome, custo });
+  document.getElementById('extra-nome').value  = '';
+  document.getElementById('extra-custo').value = '';
+  saveCasaConfigCurrent();
+  renderCasaTab();
+}
+
+function removeExtra(i) {
+  casaConfig.extras.splice(i, 1);
+  saveCasaConfigCurrent();
+  renderCasaTab();
+}
+
+function saveCasaConfigCurrent() {
+  // Usa uid guardado em memória
+  if (window._uid) saveCasaConfig(window._uid);
+}
+
+function renderCasaTab() {
+  const extrasTotal = casaConfig.extras.reduce((s, e) => s + e.custo, 0);
+
+  document.getElementById('casa-preco').textContent        = fmt(casaConfig.preco);
+  document.getElementById('casa-pago').textContent         = fmt(casaConfig.pago);
+  document.getElementById('casa-extras-total').textContent = fmt(extrasTotal);
+  document.getElementById('casa-goal-display').textContent = fmt(casaConfig.goal);
+  document.getElementById('casa-f-preco').value = casaConfig.preco;
+  document.getElementById('casa-f-pago').value  = casaConfig.pago;
+  document.getElementById('casa-f-goal').value  = casaConfig.goal;
+
+  // Lista de extras
+  const list = document.getElementById('extras-list');
+  if (casaConfig.extras.length === 0) {
+    list.innerHTML = '<p style="color:var(--text2);font-size:13px">Ainda não há extras adicionados.</p>';
+  } else {
+    list.innerHTML = casaConfig.extras.map((e, i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px">${e.nome}</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-weight:600;color:var(--yellow)">${fmt(e.custo)}</span>
+          <button onclick="removeExtra(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px" title="Remover">✕</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // Resumo
+  const tbody = document.getElementById('casa-resumo-body');
+  const falta = casaConfig.preco - casaConfig.pago;
+  const totalNecessario = casaConfig.goal + extrasTotal;
+  const poupancaAtual = allData.length ? (allData[allData.length-1].summary?.['Dinheiro total possivel casa']?.ines || 0) : 0;
+  const rows = [
+    ['Preço total da casa',        fmt(casaConfig.preco),    ''],
+    ['Já pago (sinal)',            '− ' + fmt(casaConfig.pago), 'color:var(--green)'],
+    ['Valor em falta (hipoteca)',  fmt(falta),               'color:var(--red)'],
+    ['──────────────────',        '',                        ''],
+    ['Objetivo de poupança (entrada)', fmt(casaConfig.goal), 'color:var(--accent)'],
+    ['Total extras / obras',       fmt(extrasTotal),         'color:var(--yellow)'],
+    ['Total necessário poupar',    fmt(totalNecessario),     'font-weight:700'],
+    ['──────────────────',        '',                        ''],
+    ['Poupança atual (para casa)', fmt(poupancaAtual),       'color:var(--green)'],
+    ['Ainda falta poupar',        fmt(Math.max(0, totalNecessario - poupancaAtual)), 'font-weight:700;color:var(--accent)'],
+  ];
+  tbody.innerHTML = rows.map(([l, v, s]) =>
+    `<tr><td style="color:var(--text2);font-size:13px">${l}</td><td style="text-align:right;font-size:13px;${s}">${v}</td></tr>`
+  ).join('');
+}
+
 // ── Navigation ────────────────────────────────────────────────
 function switchTab(tab, btn) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
@@ -887,6 +1053,7 @@ function switchTab(tab, btn) {
   if (tab==='ativos')   initAtivos();
   if (tab==='ines')     initPerson('ines');
   if (tab==='dany')     initPerson('dany');
+  if (tab==='casa')     renderCasaTab();
 }
 
 // ── Goal ──────────────────────────────────────────────────────
