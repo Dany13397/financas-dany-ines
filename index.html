@@ -146,7 +146,7 @@
 <!-- LOADING -->
 <div id="screen-loading">
   <div class="spinner"></div>
-  <p style="color:var(--text2);font-size:13px">A carregar...</p>
+  <p id="loading-msg" style="color:var(--text2);font-size:13px">A carregar...</p>
 </div>
 
 <!-- AUTH -->
@@ -571,18 +571,26 @@ async function boot() {
   }
 }
 
-function withTimeout(promise, ms) {
-  const t = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
-  return Promise.race([promise, t]);
+function setLoadingMsg(msg) {
+  const el = document.getElementById('loading-msg');
+  if (el) el.textContent = msg;
 }
 
 async function loadApp(session) {
   show('loading');
+  setLoadingMsg('A ligar à base de dados...');
+
+  // Avisa após 5s que pode demorar (base de dados a acordar)
+  const slowTimer = setTimeout(() => setLoadingMsg('A acordar a base de dados, aguarda um momento...'), 5000);
+
   try {
-    await withTimeout(loadCasaConfig(), 10000);
+    await Promise.all([loadCasaConfig(), fetchData()]);
   } catch(e) {
-    casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
+    console.error('loadApp error:', e);
+  } finally {
+    clearTimeout(slowTimer);
   }
+
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
   document.getElementById('goal-display').textContent = fmtShort(goal);
@@ -592,11 +600,6 @@ async function loadApp(session) {
   document.getElementById('user-badge').textContent = name.charAt(0).toUpperCase();
   document.getElementById('user-badge').title = email + ' — Clica para sair';
 
-  try {
-    await withTimeout(fetchData(), 10000);
-  } catch(e) {
-    console.error('fetchData timeout:', e);
-  }
   show('app');
   initDashboard();
   checkMigration();
