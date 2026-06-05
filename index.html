@@ -204,6 +204,8 @@
     <button class="nav-btn active" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
     <button class="nav-btn" onclick="switchTab('evolucao',this)">📈 Evolução</button>
     <button class="nav-btn" onclick="switchTab('ativos',this)">💰 Ativos</button>
+    <button class="nav-btn" onclick="switchTab('ines',this)" style="color:var(--ines)">👤 Inês</button>
+    <button class="nav-btn" onclick="switchTab('dany',this)" style="color:var(--dany)">👤 Dany</button>
     <button class="nav-btn" onclick="switchTab('adicionar',this)">➕ Registar</button>
   </nav>
 
@@ -318,6 +320,68 @@
             <tbody id="asset-table-body"></tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- INÊS -->
+    <div id="tab-ines" class="tab-panel">
+      <div class="cards-grid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="card"><div class="card-label">Total Inês</div><div class="card-value" style="color:var(--ines)" id="pi-total">—</div><div class="card-sub" id="pi-total-delta">—</div></div>
+        <div class="card"><div class="card-label">Para Casa</div><div class="card-value" id="pi-casa">—</div><div class="card-sub" id="pi-casa-delta">—</div></div>
+        <div class="card"><div class="card-label">Investido (bloqueado)</div><div class="card-value" id="pi-invest">—</div><div class="card-sub" id="pi-invest-delta">—</div></div>
+        <div class="card"><div class="card-label">Variação Mensal Casa</div><div class="card-value" id="pi-delta">—</div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Evolução ao Longo do Tempo <small style="color:var(--ines)">Inês</small></div>
+        <div class="chart-wrap"><canvas id="chart-pi-time"></canvas></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div class="chart-card" style="margin-bottom:0">
+          <div class="chart-title">Total vs Casa</div>
+          <div class="chart-wrap"><canvas id="chart-pi-split" style="max-height:200px"></canvas></div>
+        </div>
+        <div class="chart-card" style="margin-bottom:0">
+          <div class="chart-title">Distribuição de Ativos</div>
+          <div class="chart-wrap"><canvas id="chart-pi-pie" style="max-height:200px"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px">Ativos — Inês</div>
+        <div class="table-wrap"><table class="asset-table">
+          <thead><tr><th>Ativo</th><th style="text-align:right">Valor</th><th style="text-align:right">% do Total</th></tr></thead>
+          <tbody id="pi-table"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- DANY -->
+    <div id="tab-dany" class="tab-panel">
+      <div class="cards-grid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="card"><div class="card-label">Total Dany</div><div class="card-value" style="color:var(--dany)" id="pd-total">—</div><div class="card-sub" id="pd-total-delta">—</div></div>
+        <div class="card"><div class="card-label">Para Casa</div><div class="card-value" id="pd-casa">—</div><div class="card-sub" id="pd-casa-delta">—</div></div>
+        <div class="card"><div class="card-label">Investido (bloqueado)</div><div class="card-value" id="pd-invest">—</div><div class="card-sub" id="pd-invest-delta">—</div></div>
+        <div class="card"><div class="card-label">Variação Mensal Casa</div><div class="card-value" id="pd-delta">—</div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Evolução ao Longo do Tempo <small style="color:var(--dany)">Dany</small></div>
+        <div class="chart-wrap"><canvas id="chart-pd-time"></canvas></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div class="chart-card" style="margin-bottom:0">
+          <div class="chart-title">Total vs Casa</div>
+          <div class="chart-wrap"><canvas id="chart-pd-split" style="max-height:200px"></canvas></div>
+        </div>
+        <div class="chart-card" style="margin-bottom:0">
+          <div class="chart-title">Distribuição de Ativos</div>
+          <div class="chart-wrap"><canvas id="chart-pd-pie" style="max-height:200px"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px">Ativos — Dany</div>
+        <div class="table-wrap"><table class="asset-table">
+          <thead><tr><th>Ativo</th><th style="text-align:right">Valor</th><th style="text-align:right">% do Total</th></tr></thead>
+          <tbody id="pd-table"></tbody>
+        </table></div>
       </div>
     </div>
 
@@ -707,6 +771,99 @@ function initAtivos() {
   const tr=document.createElement('tr'); tr.style.fontWeight='700'; tr.innerHTML=`<td>Total</td><td style="text-align:right;color:var(--ines)">${fmt(tI)}</td><td style="text-align:right;color:var(--dany)">${fmt(tD)}</td><td style="text-align:right">${fmt(tI+tD)}</td>`; tbody.appendChild(tr);
 }
 
+// ── Separadores individuais ───────────────────────────────────
+function initPerson(p) {
+  if (!allData.length) return;
+  const prefix  = p === 'ines' ? 'pi' : 'pd';
+  const color   = p === 'ines' ? '#ff6584' : '#6c63ff';
+  const bgColor = p === 'ines' ? 'rgba(255,101,132,.15)' : 'rgba(108,99,255,.15)';
+
+  const last = allData[allData.length-1];
+  const prev = allData[allData.length-2];
+  const s  = last.summary  || {};
+  const ps = prev?.summary || {};
+
+  const total  = s['Total Individual']?.[p]                        || 0;
+  const casa   = s['Dinheiro possivel casa individual']?.[p]        || 0;
+  const invest = s['Dinheiro investido individual (não possível casa)']?.[p] || 0;
+  const delta  = s['Ganho/Perda Casa Individual Mensal']?.[p]       || 0;
+  const pTotal = ps['Total Individual']?.[p]                        || 0;
+  const pCasa  = ps['Dinheiro possivel casa individual']?.[p]       || 0;
+  const pInvest= ps['Dinheiro investido individual (não possível casa)']?.[p] || 0;
+
+  document.getElementById(`${prefix}-total`).textContent  = fmt(total);
+  document.getElementById(`${prefix}-casa`).textContent   = fmt(casa);
+  document.getElementById(`${prefix}-invest`).textContent = fmt(invest);
+
+  const dEl = document.getElementById(`${prefix}-delta`);
+  dEl.textContent  = (delta >= 0 ? '+' : '') + fmt(delta);
+  dEl.style.color  = delta >= 0 ? 'var(--green)' : 'var(--red)';
+
+  function setDelta(id, cur, pre) {
+    const d = cur - pre, el = document.getElementById(id);
+    el.textContent  = (d >= 0 ? '+' : '') + fmt(d) + ' vs mês ant.';
+    el.className    = 'card-sub ' + (d >= 0 ? 'up' : 'down');
+  }
+  setDelta(`${prefix}-total-delta`,  total,  pTotal);
+  setDelta(`${prefix}-casa-delta`,   casa,   pCasa);
+  setDelta(`${prefix}-invest-delta`, invest, pInvest);
+
+  // Gráfico evolução
+  const labels  = allData.map(d => dtLabel(d.date));
+  const totals  = allData.map(d => d.summary?.['Total Individual']?.[p] || 0);
+  const casas   = allData.map(d => d.summary?.['Dinheiro possivel casa individual']?.[p] || 0);
+  mkChart(`chart-${prefix}-time`, {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Total',     data: totals, borderColor: color,   backgroundColor: bgColor, fill: true, tension: .4, pointRadius: 3 },
+      { label: 'Para Casa', data: casas,  borderColor: '#ffd166', borderDash: [5,3], fill: false, tension: .4, pointRadius: 3 }
+    ]},
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { mode: 'index', callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) }}}}
+  });
+
+  // Donut total vs investido
+  mkChart(`chart-${prefix}-split`, {
+    type: 'doughnut',
+    data: { labels: ['Para Casa', 'Investido (bloqueado)'], datasets: [{ data: [casa, invest], backgroundColor: ['#ffd166', color], borderWidth: 2, borderColor: '#1a1d27' }]},
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#8b90b0', font: { size: 10 }, boxWidth: 10 }}, tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + fmt(c.raw) }}}}
+  });
+
+  // Donut ativos
+  const assets = last.assets || {};
+  const pieLabels = [], pieVals = [], pieColors = [];
+  ASSET_KEYS.forEach(k => {
+    const v = assets[k]?.[p];
+    if (v && v > 0) { pieLabels.push(k.replace('Trade Republic', 'TR').replace('Certificados de Aforro', 'Cert.Aforro').replace('Ações Accenture', 'Accenture')); pieVals.push(v); pieColors.push(ASSET_COLORS[k]); }
+  });
+  mkChart(`chart-${prefix}-pie`, {
+    type: 'doughnut',
+    data: { labels: pieLabels, datasets: [{ data: pieVals, backgroundColor: pieColors, borderWidth: 2, borderColor: '#1a1d27' }]},
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: '#8b90b0', font: { size: 10 }, boxWidth: 10, padding: 8 }}, tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + fmt(c.raw) }}}}
+  });
+
+  // Tabela ativos
+  const tbody = document.getElementById(`${prefix}-table`);
+  tbody.innerHTML = '';
+  let tot = 0;
+  ASSET_KEYS.forEach(k => {
+    const v = assets[k]?.[p];
+    if (!v || v <= 0) return;
+    tot += v;
+  });
+  ASSET_KEYS.forEach(k => {
+    const v = assets[k]?.[p];
+    if (!v || v <= 0) return;
+    const pct = tot > 0 ? ((v / tot) * 100).toFixed(1) : 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="asset-cat" style="background:${ASSET_COLORS[k]}"></span>${k}</td><td style="text-align:right">${fmt(v)}</td><td style="text-align:right;color:var(--text2)">${pct}%</td>`;
+    tbody.appendChild(tr);
+  });
+  const tr = document.createElement('tr');
+  tr.style.fontWeight = '700';
+  tr.innerHTML = `<td>Total</td><td style="text-align:right;color:${color}">${fmt(tot)}</td><td style="text-align:right">100%</td>`;
+  tbody.appendChild(tr);
+}
+
 // ── Navigation ────────────────────────────────────────────────
 function switchTab(tab, btn) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
@@ -716,6 +873,8 @@ function switchTab(tab, btn) {
   activeTab = tab;
   if (tab==='evolucao') initEvolucao();
   if (tab==='ativos')   initAtivos();
+  if (tab==='ines')     initPerson('ines');
+  if (tab==='dany')     initPerson('dany');
 }
 
 // ── Goal ──────────────────────────────────────────────────────
