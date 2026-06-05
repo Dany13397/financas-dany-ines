@@ -582,9 +582,13 @@ async function loadApp(session) {
 
   // Avisa após 5s que pode demorar (base de dados a acordar)
   const slowTimer = setTimeout(() => setLoadingMsg('A acordar a base de dados, aguarda um momento...'), 5000);
+  const hardTimeout = new Promise(resolve => setTimeout(resolve, 20000));
 
   try {
-    await Promise.all([loadCasaConfig(), fetchData()]);
+    await Promise.race([
+      Promise.all([loadCasaConfig(), fetchData()]),
+      hardTimeout
+    ]);
   } catch(e) {
     console.error('loadApp error:', e);
   } finally {
