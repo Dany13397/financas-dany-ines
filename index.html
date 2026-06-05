@@ -396,6 +396,23 @@
         <div class="card"><div class="card-label">Objetivo de Poupança</div><div class="card-value" style="color:var(--accent)" id="casa-goal-display">—</div><div class="card-sub">usado na barra de progresso</div></div>
       </div>
 
+      <!-- Gráfico evolução casa -->
+      <div class="chart-card">
+        <div class="chart-title">Evolução das Poupanças para Casa <small id="casa-proj-label"></small></div>
+        <div class="chart-wrap"><canvas id="chart-casa-evolucao"></canvas></div>
+      </div>
+
+      <!-- Crédito (futuro) -->
+      <div class="form-section" style="opacity:.6">
+        <h3>🏦 Detalhes do Crédito <span style="font-size:11px;font-weight:400;color:var(--text2)">(em breve)</span></h3>
+        <div class="form-grid">
+          <div class="form-group"><label>Valor do Crédito (€)</label><input type="number" placeholder="180000" disabled style="opacity:.5"></div>
+          <div class="form-group"><label>Taxa de Juro (%)</label><input type="number" placeholder="3.5" disabled style="opacity:.5"></div>
+          <div class="form-group"><label>Prazo (anos)</label><input type="number" placeholder="30" disabled style="opacity:.5"></div>
+        </div>
+        <p style="font-size:12px;color:var(--text2);margin-top:12px">Quando introduzires estes dados vamos calcular a prestação mensal e prever quando acabas de pagar a casa.</p>
+      </div>
+
       <!-- Detalhes da casa -->
       <div class="form-section">
         <h3>🏠 Detalhes da Casa</h3>
@@ -1034,8 +1051,98 @@ async function removeExtra(i) {
   renderCasaTab();
 }
 
+function renderCasaEvolucaoChart() {
+  if (!allData.length) return;
+
+  const hist = allData.map(d => ({
+    label: dtLabel(d.date),
+    val: d.summary?.['Dinheiro total possivel casa']?.ines || 0
+  }));
+
+  // Projeção: média de crescimento mensal dos últimos 6 meses
+  const recent = hist.slice(-6);
+  const avgGrowth = recent.length > 1
+    ? (recent[recent.length-1].val - recent[0].val) / (recent.length - 1)
+    : 0;
+
+  const goal80 = casaConfig.goal;
+  const naEscritura = goal80 - casaConfig.pago;
+  const currentVal = hist[hist.length-1].val;
+
+  // Gera projeção até atingir o objetivo (máx 36 meses)
+  const projLabels = [], projVals = [];
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  let lastDate = allData[allData.length-1].date.replace('b','');
+  let [yr, mo] = lastDate.split('-').map(Number);
+  let projVal = currentVal;
+
+  let metaMonth = null;
+  for (let i = 1; i <= 48; i++) {
+    mo++; if (mo > 12) { mo = 1; yr++; }
+    projVal += avgGrowth;
+    const lbl = months[mo-1] + ' ' + String(yr).slice(2);
+    projLabels.push(lbl);
+    projVals.push(Math.max(0, Math.round(projVal)));
+    if (!metaMonth && projVal >= naEscritura) { metaMonth = lbl; }
+    if (projVal >= goal80) break;
+  }
+
+  // Label de previsão
+  const projEl = document.getElementById('casa-proj-label');
+  if (projEl) {
+    if (currentVal >= naEscritura) {
+      projEl.textContent = '✅ Objetivo atingido!';
+      projEl.style.color = 'var(--green)';
+    } else if (metaMonth && avgGrowth > 0) {
+      projEl.textContent = `previsão: ${metaMonth}`;
+      projEl.style.color = 'var(--text2)';
+    } else {
+      projEl.textContent = '';
+    }
+  }
+
+  const histLabels = hist.map(d => d.label);
+  const histVals   = hist.map(d => d.val);
+  const goalLine   = [...histLabels, ...projLabels].map(() => naEscritura);
+
+  mkChart('chart-casa-evolucao', {
+    type: 'line',
+    data: {
+      labels: [...histLabels, ...projLabels],
+      datasets: [
+        {
+          label: 'Poupanças para casa',
+          data: [...histVals, ...Array(projLabels.length).fill(null)],
+          borderColor: '#43d68a', backgroundColor: 'rgba(67,214,138,.15)',
+          fill: true, tension: .4, pointRadius: 3
+        },
+        {
+          label: 'Projeção',
+          data: [...Array(histLabels.length - 1).fill(null), histVals[histVals.length-1], ...projVals],
+          borderColor: '#6c63ff', borderDash: [6, 4],
+          fill: false, tension: .4, pointRadius: 2, pointStyle: 'circle'
+        },
+        {
+          label: 'Objetivo (escritura)',
+          data: goalLine,
+          borderColor: '#ffd166', borderDash: [4, 4],
+          fill: false, pointRadius: 0, borderWidth: 2
+        }
+      ]
+    },
+    options: {
+      ...baseOpts,
+      plugins: {
+        ...baseOpts.plugins,
+        tooltip: { mode: 'index', callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) } }
+      }
+    }
+  });
+}
+
 function renderCasaTab() {
   const extrasTotal = casaConfig.extras.reduce((s, e) => s + e.custo, 0);
+  renderCasaEvolucaoChart();
 
   document.getElementById('casa-preco').textContent        = fmt(casaConfig.preco);
   document.getElementById('casa-pago').textContent         = fmt(casaConfig.pago);
