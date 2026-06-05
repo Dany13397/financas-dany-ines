@@ -571,20 +571,32 @@ async function boot() {
   }
 }
 
+function withTimeout(promise, ms) {
+  const t = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
+  return Promise.race([promise, t]);
+}
+
 async function loadApp(session) {
   show('loading');
-  await loadCasaConfig();
+  try {
+    await withTimeout(loadCasaConfig(), 10000);
+  } catch(e) {
+    casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
+  }
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
   document.getElementById('goal-display').textContent = fmtShort(goal);
 
-  // User badge
   const email = session.user.email || '';
   const name = email.split('@')[0];
   document.getElementById('user-badge').textContent = name.charAt(0).toUpperCase();
   document.getElementById('user-badge').title = email + ' — Clica para sair';
 
-  await fetchData();
+  try {
+    await withTimeout(fetchData(), 10000);
+  } catch(e) {
+    console.error('fetchData timeout:', e);
+  }
   show('app');
   initDashboard();
   checkMigration();
