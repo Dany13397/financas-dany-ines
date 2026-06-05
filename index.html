@@ -227,7 +227,7 @@
           <div class="card-sub" id="kpi-total-delta">—</div>
         </div>
         <div class="card">
-          <div class="card-label">Para Casa (líquido)</div>
+          <div class="card-label">Patrimônio Líquido</div>
           <div class="card-value" id="kpi-casa">—</div>
           <div class="card-sub" id="kpi-casa-delta">—</div>
         </div>
@@ -945,9 +945,13 @@ let casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, ext
 
 function loadCasaConfig(uid) {
   const saved = localStorage.getItem('casa_' + uid);
-  if (saved) casaConfig = JSON.parse(saved);
-  else casaConfig = { preco: 260000, pago: 2000, goal: 60000, extras: [] };
-  // Sincroniza goal global com casaConfig
+  if (saved) {
+    casaConfig = JSON.parse(saved);
+    if (casaConfig.pago === 2000) { casaConfig.pago = 52000; casaConfig.goal = 80000; }
+    if (!casaConfig.credito) casaConfig.credito = 180000;
+  } else {
+    casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
+  }
   goal = casaConfig.goal;
 }
 
