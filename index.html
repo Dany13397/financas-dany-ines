@@ -206,6 +206,7 @@
     <button class="nav-btn" onclick="switchTab('ativos',this)">💰 Ativos</button>
     <button class="nav-btn" onclick="switchTab('ines',this)" style="color:var(--ines)">👤 Inês</button>
     <button class="nav-btn" onclick="switchTab('dany',this)" style="color:var(--dany)">👤 Dany</button>
+    <button class="nav-btn" onclick="switchTab('casamento',this)">💒 Casamento</button>
     <button class="nav-btn" onclick="switchTab('casa',this)">🏠 Casa</button>
     <button class="nav-btn" onclick="switchTab('adicionar',this)">➕ Registar</button>
   </nav>
@@ -384,6 +385,66 @@
           <tbody id="pd-table"></tbody>
         </table></div>
       </div>
+    </div>
+
+    <!-- CASAMENTO -->
+    <div id="tab-casamento" class="tab-panel">
+
+      <!-- Cards topo -->
+      <div class="cards-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px">
+        <div class="card"><div class="card-label">Total Casamento</div><div class="card-value" style="color:var(--ines)" id="w-total">—</div></div>
+        <div class="card"><div class="card-label">Dias para o Casamento</div><div class="card-value" id="w-dias">—</div><div class="card-sub" id="w-data-label"></div></div>
+        <div class="card"><div class="card-label">Já Orçamentado</div><div class="card-value" style="color:var(--green)" id="w-orcamentado">—</div><div class="card-sub" id="w-orcamentado-pct"></div></div>
+        <div class="card"><div class="card-label">Por Definir</div><div class="card-value" style="color:var(--yellow)" id="w-pordefinir">—</div></div>
+      </div>
+
+      <!-- Impacto na casa -->
+      <div class="chart-card" style="margin-bottom:20px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:14px">🏠 Impacto no Dinheiro da Casa</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+          <div>
+            <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Poupanças Atuais</div>
+            <div style="font-size:20px;font-weight:700;color:var(--green)" id="w-imp-atual">—</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">− Casamento</div>
+            <div style="font-size:20px;font-weight:700;color:var(--ines)" id="w-imp-casamento">—</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Resta para Casa</div>
+            <div style="font-size:20px;font-weight:700" id="w-imp-resta">—</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)" id="w-imp-msg"></div>
+      </div>
+
+      <!-- Lista de itens -->
+      <div class="form-section">
+        <h3>💍 Itens do Casamento</h3>
+        <div id="w-items-list" style="margin-bottom:16px"></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Descrição</label>
+            <input type="text" id="w-item-nome" placeholder="ex: Fotógrafo, DJ...">
+          </div>
+          <div class="form-group">
+            <label>Custo estimado (€)</label>
+            <input type="number" id="w-item-custo" placeholder="0" step="100">
+          </div>
+          <div class="form-group" style="justify-content:flex-end">
+            <label>&nbsp;</label>
+            <button class="btn" onclick="addWeddingItem()">➕ Adicionar</button>
+          </div>
+        </div>
+        <div class="success-msg" id="w-save-ok">✅ Guardado!</div>
+      </div>
+
+      <!-- Gráfico distribuição -->
+      <div class="chart-card">
+        <div class="chart-title">Distribuição de Custos</div>
+        <div class="chart-wrap"><canvas id="chart-w-pie" style="max-height:280px"></canvas></div>
+      </div>
+
     </div>
 
     <!-- CASA -->
@@ -592,7 +653,7 @@ async function boot() {
 
 async function loadApp(session) {
   show('loading');
-  await Promise.all([loadCasaConfig(), fetchData()]);
+  await Promise.all([loadCasaConfig(), loadWeddingConfig(), fetchData()]);
 
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
@@ -981,6 +1042,141 @@ function initPerson(p) {
   tbody.appendChild(tr);
 }
 
+// ── Casamento ────────────────────────────────────────────────
+const CACHE_WEDDING = 'cache_wedding';
+const WEDDING_DATE  = new Date('2027-07-16');
+
+let weddingConfig = {
+  items: [
+    { nome: 'Quinta das Carpas', custo: 26589 },
+    { nome: 'Fotógrafo',         custo: 0 },
+    { nome: 'DJ',                custo: 0 },
+    { nome: 'Lembranças',        custo: 0 },
+    { nome: 'Celebrante',        custo: 0 },
+    { nome: 'Fato Noivo',        custo: 0 },
+    { nome: 'Sapatos Noiva',     custo: 0 },
+    { nome: 'Sapatos Noivo',     custo: 0 },
+    { nome: 'Maquilhagem',       custo: 0 },
+    { nome: 'Cabeleireiro',      custo: 0 },
+    { nome: 'Ramo',              custo: 0 },
+    { nome: 'Vestido Noiva',     custo: 0 },
+  ]
+};
+
+async function loadWeddingConfig() {
+  const cached = sessionStorage.getItem(CACHE_WEDDING);
+  if (cached) { weddingConfig = JSON.parse(cached); refreshWeddingInBackground(); return; }
+  await fetchWeddingFromDB();
+}
+
+async function fetchWeddingFromDB() {
+  const { data } = await sb.from('config').select('value').eq('key', 'casamento').single();
+  if (data?.value) weddingConfig = data.value;
+  sessionStorage.setItem(CACHE_WEDDING, JSON.stringify(weddingConfig));
+}
+
+async function refreshWeddingInBackground() {
+  try { await fetchWeddingFromDB(); renderWeddingTab(); } catch(e) {}
+}
+
+async function saveWeddingConfig() {
+  await sb.from('config').upsert({ key: 'casamento', value: weddingConfig }, { onConflict: 'key' });
+  sessionStorage.setItem(CACHE_WEDDING, JSON.stringify(weddingConfig));
+}
+
+async function addWeddingItem() {
+  const nome  = document.getElementById('w-item-nome').value.trim();
+  const custo = parseFloat(document.getElementById('w-item-custo').value) || 0;
+  if (!nome) return;
+  weddingConfig.items.push({ nome, custo });
+  document.getElementById('w-item-nome').value  = '';
+  document.getElementById('w-item-custo').value = '';
+  await saveWeddingConfig();
+  renderWeddingTab();
+  const ok = document.getElementById('w-save-ok');
+  ok.style.display = 'block'; setTimeout(() => ok.style.display = 'none', 2000);
+}
+
+async function removeWeddingItem(i) {
+  weddingConfig.items.splice(i, 1);
+  await saveWeddingConfig();
+  renderWeddingTab();
+}
+
+async function updateWeddingItem(i, field, value) {
+  if (field === 'custo') weddingConfig.items[i].custo = parseFloat(value) || 0;
+  if (field === 'nome')  weddingConfig.items[i].nome  = value;
+  await saveWeddingConfig();
+  renderWeddingTab();
+}
+
+function renderWeddingTab() {
+  const items = weddingConfig.items;
+  const total = items.reduce((s, i) => s + (i.custo || 0), 0);
+  const orcamentado = items.filter(i => i.custo > 0).reduce((s, i) => s + i.custo, 0);
+  const porDefinir  = items.filter(i => !i.custo || i.custo === 0).length;
+
+  // Countdown
+  const hoje = new Date();
+  const dias = Math.ceil((WEDDING_DATE - hoje) / (1000*60*60*24));
+  document.getElementById('w-dias').textContent = dias > 0 ? dias : '🎉';
+  document.getElementById('w-data-label').textContent = '16 de Julho de 2027';
+  document.getElementById('w-total').textContent = fmt(total);
+  document.getElementById('w-orcamentado').textContent = fmt(orcamentado);
+  document.getElementById('w-orcamentado-pct').textContent = total > 0 ? Math.round(orcamentado/total*100)+'% do total' : '';
+  document.getElementById('w-pordefinir').textContent = porDefinir + (porDefinir === 1 ? ' item' : ' itens');
+
+  // Impacto casa
+  const poupancaAtual = allData.length ? (allData[allData.length-1].summary?.['Dinheiro total possivel casa']?.ines || 0) : 0;
+  const naEscritura   = casaConfig.goal - casaConfig.pago;
+  const restaParaCasa = poupancaAtual - total;
+  const restaEl = document.getElementById('w-imp-resta');
+  document.getElementById('w-imp-atual').textContent     = fmt(poupancaAtual);
+  document.getElementById('w-imp-casamento').textContent = fmt(total);
+  restaEl.textContent  = fmt(restaParaCasa);
+  restaEl.style.color  = restaParaCasa >= naEscritura ? 'var(--green)' : 'var(--red)';
+  const msgEl = document.getElementById('w-imp-msg');
+  if (restaParaCasa >= naEscritura) {
+    msgEl.innerHTML = `✅ Mesmo com o casamento, sobram <strong style="color:var(--green)">${fmt(restaParaCasa - naEscritura)}</strong> acima do necessário para a escritura.`;
+  } else if (restaParaCasa >= 0) {
+    msgEl.innerHTML = `⚠️ Após o casamento faltam <strong style="color:var(--red)">${fmt(naEscritura - restaParaCasa)}</strong> para atingir o objetivo da escritura.`;
+  } else {
+    msgEl.innerHTML = `❌ O custo do casamento ultrapassa as poupanças atuais em <strong style="color:var(--red)">${fmt(Math.abs(restaParaCasa))}</strong>.`;
+  }
+
+  // Lista de itens
+  const list = document.getElementById('w-items-list');
+  list.innerHTML = items.map((item, i) => `
+    <div style="display:grid;grid-template-columns:1fr 160px 36px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <input type="text" value="${item.nome}" onchange="updateWeddingItem(${i},'nome',this.value)"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;width:100%">
+      <div style="position:relative">
+        <input type="number" value="${item.custo || ''}" placeholder="0" onchange="updateWeddingItem(${i},'custo',this.value)"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 28px 8px 10px;color:var(--text);font-size:13px;outline:none;width:100%">
+        <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px">€</span>
+      </div>
+      <button onclick="removeWeddingItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1">✕</button>
+    </div>`).join('');
+
+  // Gráfico pizza — só itens com custo
+  const pieItems = items.filter(i => i.custo > 0);
+  const pieColors = ['#6c63ff','#ff6584','#43d68a','#ffd166','#4fc3f7','#ff9f43','#a78bfa','#ff7eb3','#81d4fa','#ffb347','#b3e5fc','#ff6b6b','#c3e88d','#89ddff'];
+  mkChart('chart-w-pie', {
+    type: 'doughnut',
+    data: {
+      labels: pieItems.map(i => i.nome),
+      datasets: [{ data: pieItems.map(i => i.custo), backgroundColor: pieColors.slice(0, pieItems.length), borderWidth: 2, borderColor: '#1a1d27' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#8b90b0', font: { size: 11 }, boxWidth: 12, padding: 10 } },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.raw)} (${Math.round(c.raw/total*100)}%)` } }
+      }
+    }
+  });
+}
+
 // ── Casa ─────────────────────────────────────────────────────
 let casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
 
@@ -1204,7 +1400,8 @@ function switchTab(tab, btn) {
   if (tab==='ativos')   initAtivos();
   if (tab==='ines')     initPerson('ines');
   if (tab==='dany')     initPerson('dany');
-  if (tab==='casa')     renderCasaTab();
+  if (tab==='casamento') renderWeddingTab();
+  if (tab==='casa')      renderCasaTab();
 }
 
 // ── Goal ──────────────────────────────────────────────────────
