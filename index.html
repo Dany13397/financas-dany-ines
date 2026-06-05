@@ -558,10 +558,12 @@ const dtLabel = d => {
 
 // ── Boot ─────────────────────────────────────────────────────
 async function boot() {
+  // Acorda o Supabase em segundo plano enquanto verificamos a sessão
+  sb.from('entries').select('count', { count: 'exact', head: true }).then(() => {}).catch(() => {});
+
   show('loading');
   try {
-    const timeout = new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: null }), 8000));
-    const { data: { session }, error } = await Promise.race([sb.auth.getSession(), timeout]);
+    const { data: { session }, error } = await sb.auth.getSession();
     if (error) throw error;
     if (!session) { show('auth'); return; }
     await loadApp(session);
@@ -571,29 +573,9 @@ async function boot() {
   }
 }
 
-function setLoadingMsg(msg) {
-  const el = document.getElementById('loading-msg');
-  if (el) el.textContent = msg;
-}
-
 async function loadApp(session) {
   show('loading');
-  setLoadingMsg('A ligar à base de dados...');
-
-  // Avisa após 5s que pode demorar (base de dados a acordar)
-  const slowTimer = setTimeout(() => setLoadingMsg('A acordar a base de dados, aguarda um momento...'), 5000);
-  const hardTimeout = new Promise(resolve => setTimeout(resolve, 20000));
-
-  try {
-    await Promise.race([
-      Promise.all([loadCasaConfig(), fetchData()]),
-      hardTimeout
-    ]);
-  } catch(e) {
-    console.error('loadApp error:', e);
-  } finally {
-    clearTimeout(slowTimer);
-  }
+  await Promise.all([loadCasaConfig(), fetchData()]);
 
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
