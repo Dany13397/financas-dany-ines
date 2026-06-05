@@ -703,13 +703,18 @@ function showReset() { document.getElementById('form-login').style.display='none
 function showLogin() { document.getElementById('form-reset').style.display='none'; document.getElementById('form-login').style.display='block'; }
 
 // Gestão de sessão — INITIAL_SESSION lê do storage sem chamada de rede
+let _appLoaded = false;
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'INITIAL_SESSION') {
     if (!session) { show('auth'); return; }
+    _appLoaded = true;
     await loadApp(session);
   }
-  if (event === 'SIGNED_IN')  await loadApp(session);
-  if (event === 'SIGNED_OUT') { allData = []; show('auth'); }
+  if (event === 'SIGNED_IN' && !_appLoaded) {
+    _appLoaded = true;
+    await loadApp(session);
+  }
+  if (event === 'SIGNED_OUT') { _appLoaded = false; allData = []; show('auth'); }
 });
 
 // ── Data ─────────────────────────────────────────────────────
