@@ -573,7 +573,6 @@ async function boot() {
 
 async function loadApp(session) {
   show('loading');
-  // Load goal from localStorage (per-user key)
   await loadCasaConfig();
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
@@ -1065,8 +1064,8 @@ async function saveGoal() {
   const v = parseFloat(document.getElementById('goal-input').value);
   if (!isNaN(v) && v>0) {
     goal = v;
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) localStorage.setItem('goal_'+session.user.id, v);
+    casaConfig.goal = v;
+    await saveCasaConfig();
     closeGoalModal();
     initDashboard();
     if (activeTab==='evolucao') initEvolucao();
