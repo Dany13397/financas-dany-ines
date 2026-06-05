@@ -405,13 +405,12 @@
             <input type="number" id="casa-f-preco" placeholder="260000" step="1000">
           </div>
           <div class="form-group">
-            <label>Já Pago / Sinal (€)</label>
-            <input type="number" id="casa-f-pago" placeholder="2000" step="500">
+            <label>Crédito Bancário (€)</label>
+            <input type="number" id="casa-f-credito" placeholder="180000" step="1000">
           </div>
           <div class="form-group">
-            <label>Objetivo de Poupança (€)</label>
-            <input type="number" id="casa-f-goal" placeholder="ex: 60000" step="1000">
-            <span style="font-size:11px;color:var(--text2);margin-top:2px">valor que querem ter poupado para a entrada</span>
+            <label>Já Pago / Sinal (€)</label>
+            <input type="number" id="casa-f-pago" placeholder="52000" step="500">
           </div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="saveCasaDetails()">💾 Guardar Detalhes</button>
@@ -942,7 +941,7 @@ function initPerson(p) {
 }
 
 // ── Casa ─────────────────────────────────────────────────────
-let casaConfig = { preco: 260000, pago: 2000, goal: 60000, extras: [] };
+let casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
 
 function loadCasaConfig(uid) {
   const saved = localStorage.getItem('casa_' + uid);
@@ -957,13 +956,14 @@ function saveCasaConfig(uid) {
 }
 
 function saveCasaDetails() {
-  const preco = parseFloat(document.getElementById('casa-f-preco').value) || casaConfig.preco;
-  const pago  = parseFloat(document.getElementById('casa-f-pago').value)  || casaConfig.pago;
-  const g     = parseFloat(document.getElementById('casa-f-goal').value)  || casaConfig.goal;
-  casaConfig.preco = preco;
-  casaConfig.pago  = pago;
-  casaConfig.goal  = g;
-  goal = g;
+  const preco   = parseFloat(document.getElementById('casa-f-preco').value)   || casaConfig.preco;
+  const credito = parseFloat(document.getElementById('casa-f-credito').value) || casaConfig.credito;
+  const pago    = parseFloat(document.getElementById('casa-f-pago').value)    || casaConfig.pago;
+  casaConfig.preco   = preco;
+  casaConfig.credito = credito;
+  casaConfig.pago    = pago;
+  casaConfig.goal    = preco - credito; // objetivo = total que pagam vocês
+  goal = casaConfig.goal;
   saveCasaConfigCurrent();
   renderCasaTab();
   initDashboard();
@@ -1001,9 +1001,9 @@ function renderCasaTab() {
   document.getElementById('casa-pago').textContent         = fmt(casaConfig.pago);
   document.getElementById('casa-extras-total').textContent = fmt(extrasTotal);
   document.getElementById('casa-goal-display').textContent = fmt(casaConfig.goal);
-  document.getElementById('casa-f-preco').value = casaConfig.preco;
-  document.getElementById('casa-f-pago').value  = casaConfig.pago;
-  document.getElementById('casa-f-goal').value  = casaConfig.goal;
+  document.getElementById('casa-f-preco').value   = casaConfig.preco;
+  document.getElementById('casa-f-credito').value = casaConfig.credito;
+  document.getElementById('casa-f-pago').value    = casaConfig.pago;
 
   // Lista de extras
   const list = document.getElementById('extras-list');
@@ -1022,20 +1022,24 @@ function renderCasaTab() {
 
   // Resumo
   const tbody = document.getElementById('casa-resumo-body');
-  const falta = casaConfig.preco - casaConfig.pago;
-  const totalNecessario = casaConfig.goal + extrasTotal;
+  const totalVosso  = casaConfig.preco - casaConfig.credito;           // 80k
+  const naEscritura = totalVosso - casaConfig.pago;                    // 28k
+  const totalNecessario = totalVosso + extrasTotal;
   const poupancaAtual = allData.length ? (allData[allData.length-1].summary?.['Dinheiro total possivel casa']?.ines || 0) : 0;
+  const aindaFalta = Math.max(0, naEscritura + extrasTotal - poupancaAtual);
   const rows = [
-    ['Preço total da casa',        fmt(casaConfig.preco),    ''],
-    ['Já pago (sinal)',            '− ' + fmt(casaConfig.pago), 'color:var(--green)'],
-    ['Valor em falta (hipoteca)',  fmt(falta),               'color:var(--red)'],
-    ['──────────────────',        '',                        ''],
-    ['Objetivo de poupança (entrada)', fmt(casaConfig.goal), 'color:var(--accent)'],
-    ['Total extras / obras',       fmt(extrasTotal),         'color:var(--yellow)'],
-    ['Total necessário poupar',    fmt(totalNecessario),     'font-weight:700'],
-    ['──────────────────',        '',                        ''],
-    ['Poupança atual (para casa)', fmt(poupancaAtual),       'color:var(--green)'],
-    ['Ainda falta poupar',        fmt(Math.max(0, totalNecessario - poupancaAtual)), 'font-weight:700;color:var(--accent)'],
+    ['Preço total da casa',              fmt(casaConfig.preco),    ''],
+    ['Crédito bancário',                 '− ' + fmt(casaConfig.credito), 'color:var(--text2)'],
+    ['Total a pagar por vocês',          fmt(totalVosso),          'font-weight:700'],
+    ['',                                 '',                       ''],
+    ['Já pago (sinal/entrada)',          '− ' + fmt(casaConfig.pago), 'color:var(--green)'],
+    ['A levar na escritura',             fmt(naEscritura),         'font-weight:700;color:var(--accent)'],
+    ['',                                 '',                       ''],
+    ['Total extras / obras',             fmt(extrasTotal),         'color:var(--yellow)'],
+    ['Total necessário (escritura + extras)', fmt(naEscritura + extrasTotal), 'font-weight:700'],
+    ['',                                 '',                       ''],
+    ['Poupança atual (para casa)',        fmt(poupancaAtual),       'color:var(--green)'],
+    ['Ainda falta',                      fmt(aindaFalta),          'font-weight:700;color:' + (aindaFalta <= 0 ? 'var(--green)' : 'var(--accent)')],
   ];
   tbody.innerHTML = rows.map(([l, v, s]) =>
     `<tr><td style="color:var(--text2);font-size:13px">${l}</td><td style="text-align:right;font-size:13px;${s}">${v}</td></tr>`
