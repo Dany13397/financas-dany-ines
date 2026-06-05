@@ -655,11 +655,37 @@ sb.auth.onAuthStateChange(async (event, session) => {
 });
 
 // ── Data ─────────────────────────────────────────────────────
+const CACHE_ENTRIES = 'cache_entries';
+const CACHE_CONFIG  = 'cache_config';
+
 async function fetchData() {
+  const cached = sessionStorage.getItem(CACHE_ENTRIES);
+  if (cached) {
+    allData = JSON.parse(cached);
+    refreshEntriesInBackground();
+    return;
+  }
+  await fetchEntriesFromDB();
+}
+
+async function fetchEntriesFromDB() {
   const { data, error } = await sb.from('entries').select('*').order('date', {ascending:true});
   if (!error && data) {
     allData = data.map(r => ({ date: r.date, assets: r.assets, summary: r.summary }));
+    sessionStorage.setItem(CACHE_ENTRIES, JSON.stringify(allData));
   }
+}
+
+async function refreshEntriesInBackground() {
+  try {
+    await fetchEntriesFromDB();
+    initDashboard();
+    if (activeTab === 'evolucao') initEvolucao();
+    if (activeTab === 'ativos')   initAtivos();
+    if (activeTab === 'ines')     initPerson('ines');
+    if (activeTab === 'dany')     initPerson('dany');
+    if (activeTab === 'casa')     renderCasaTab();
+  } catch(e) {}
 }
 
 async function checkMigration() {
@@ -956,6 +982,16 @@ function initPerson(p) {
 let casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
 
 async function loadCasaConfig() {
+  const cached = sessionStorage.getItem(CACHE_CONFIG);
+  if (cached) {
+    casaConfig = JSON.parse(cached);
+    refreshConfigInBackground();
+    return;
+  }
+  await fetchConfigFromDB();
+}
+
+async function fetchConfigFromDB() {
   const { data } = await sb.from('config').select('value').eq('key', 'casa').single();
   if (data?.value) {
     casaConfig = data.value;
@@ -965,11 +1001,17 @@ async function loadCasaConfig() {
   } else {
     casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
   }
+  sessionStorage.setItem(CACHE_CONFIG, JSON.stringify(casaConfig));
   goal = casaConfig.goal;
+}
+
+async function refreshConfigInBackground() {
+  try { await fetchConfigFromDB(); } catch(e) {}
 }
 
 async function saveCasaConfig() {
   await sb.from('config').upsert({ key: 'casa', value: casaConfig }, { onConflict: 'key' });
+  sessionStorage.setItem(CACHE_CONFIG, JSON.stringify(casaConfig));
 }
 
 async function saveCasaDetails() {
