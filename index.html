@@ -635,20 +635,10 @@ const dtLabel = d => {
 };
 
 // ── Boot ─────────────────────────────────────────────────────
-async function boot() {
-  // Acorda o Supabase em segundo plano enquanto verificamos a sessão
-  sb.from('entries').select('count', { count: 'exact', head: true }).then(() => {}).catch(() => {});
-
+function boot() {
   show('loading');
-  try {
-    const { data: { session }, error } = await sb.auth.getSession();
-    if (error) throw error;
-    if (!session) { show('auth'); return; }
-    await loadApp(session);
-  } catch(e) {
-    console.error('Boot error:', e);
-    show('auth');
-  }
+  // Acorda a BD em segundo plano
+  sb.from('entries').select('count', { count: 'exact', head: true }).then(() => {}).catch(() => {});
 }
 
 async function loadApp(session) {
@@ -712,10 +702,14 @@ async function doReset() {
 function showReset() { document.getElementById('form-login').style.display='none'; document.getElementById('form-reset').style.display='block'; }
 function showLogin() { document.getElementById('form-reset').style.display='none'; document.getElementById('form-login').style.display='block'; }
 
-// Listen for auth changes
+// Gestão de sessão — INITIAL_SESSION lê do storage sem chamada de rede
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session) await loadApp(session);
-  if (event === 'SIGNED_OUT') show('auth');
+  if (event === 'INITIAL_SESSION') {
+    if (!session) { show('auth'); return; }
+    await loadApp(session);
+  }
+  if (event === 'SIGNED_IN')  await loadApp(session);
+  if (event === 'SIGNED_OUT') { allData = []; show('auth'); }
 });
 
 // ── Data ─────────────────────────────────────────────────────
