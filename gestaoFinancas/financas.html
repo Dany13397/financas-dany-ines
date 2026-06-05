@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 Gestão Financeira — Dany & Inês</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --text: #e8eaf6;
+    --text2: #8b90b0;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --green: #43d68a;
+    --yellow: #ffd166;
+    --red: #ef5350;
+    --ines: #ff6584;
+    --dany: #6c63ff;
+    --radius: 14px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; }
+  
+  /* Header */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header h1 { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .goal-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .goal-badge span { color: var(--green); font-weight: 600; }
+
+  /* Nav */
+  .nav { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; gap: 0; padding: 0 8px; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn { padding: 14px 18px; font-size: 13px; font-weight: 500; color: var(--text2); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-btn:hover { color: var(--text); }
+
+  /* Content */
+  .content { max-width: 900px; margin: 0 auto; padding: 20px 16px 80px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards grid */
+  .cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media(min-width: 600px) { .cards-grid { grid-template-columns: repeat(4, 1fr); } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .card-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .card-value { font-size: 22px; font-weight: 700; line-height: 1; }
+  .card-sub { font-size: 12px; color: var(--text2); margin-top: 6px; }
+  .card-sub.up { color: var(--green); }
+  .card-sub.down { color: var(--red); }
+
+  /* Progress bar */
+  .progress-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .progress-title { font-size: 14px; font-weight: 600; }
+  .progress-pct { font-size: 24px; font-weight: 800; color: var(--green); }
+  .progress-bar-bg { background: var(--surface2); border-radius: 99px; height: 12px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width 1s ease; }
+  .progress-footer { display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; color: var(--text2); }
+  .progress-footer span { color: var(--text); font-weight: 600; }
+
+  /* Chart containers */
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .chart-title span { color: var(--text2); font-size: 12px; font-weight: 400; }
+  .chart-wrap { position: relative; }
+  .chart-wrap canvas { max-height: 280px; }
+
+  /* Individual breakdown */
+  .person-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .person-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .person-name { font-size: 13px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-ines { background: var(--ines); }
+  .dot-dany { background: var(--dany); }
+  .person-total { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+  .person-total.ines { color: var(--ines); }
+  .person-total.dany { color: var(--dany); }
+  .person-casa { font-size: 12px; color: var(--text2); }
+  .person-casa strong { color: var(--text); }
+
+  /* Asset table */
+  .asset-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .asset-table th { text-align: left; padding: 10px 12px; color: var(--text2); font-weight: 500; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  .asset-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+  .asset-table tr:last-child td { border-bottom: none; }
+  .asset-table tr:hover td { background: var(--surface2); }
+  .asset-cat { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 8px; }
+
+  /* Form */
+  .form-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .form-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text2); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media(min-width: 600px) { .form-grid { grid-template-columns: repeat(3, 1fr); } }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; outline: none; width: 100%; }
+  .form-group input:focus { border-color: var(--accent); }
+  .form-group input[type=month] { color-scheme: dark; }
+  .form-row { grid-column: 1 / -1; }
+  .btn { background: linear-gradient(135deg, var(--accent), #8b5cf6); color: white; border: none; border-radius: 10px; padding: 14px 24px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 4px; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.9; }
+  .btn-secondary { background: var(--surface2); border: 1px solid var(--border); }
+  .success-msg { color: var(--green); font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+
+  /* Modal */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 360px; }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+
+  /* Section title */
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+  /* Tag */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .tag-green { background: rgba(67,214,138,0.15); color: var(--green); }
+  .tag-red { background: rgba(239,83,80,0.15); color: var(--red); }
+
+  /* Scrollable table wrapper */
+  .table-wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Finanças Dany & Inês</h1>
+    <div class="header-sub" id="last-update">A carregar...</div>
+  </div>
+  <div class="goal-badge" onclick="openGoalModal()">
+    🏠 Objetivo: <span id="goal-display">—</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="switchTab('dashboard', this)">📊 Dashboard</button>
+  <button class="nav-btn" onclick="switchTab('evolucao', this)">📈 Evolução</button>
+  <button class="nav-btn" onclick="switchTab('ativos', this)">💰 Ativos</button>
+  <button class="nav-btn" onclick="switchTab('adicionar', this)">➕ Registar</button>
+</nav>
+
+<div class="content">
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="tab-panel active">
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-label">Patrimônio Total</div>
+        <div class="card-value" id="kpi-total">—</div>
+        <div class="card-sub" id="kpi-total-delta">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Para Casa (líquido)</div>
+        <div class="card-value" id="kpi-casa">—</div>
+        <div class="card-sub" id="kpi-casa-delta">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Inês</div>
+        <div class="card-value" style="color:var(--ines)" id="kpi-ines">—</div>
+        <div class="card-sub" id="kpi-ines-delta">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Dany</div>
+        <div class="card-value" style="color:var(--dany)" id="kpi-dany">—</div>
+        <div class="card-sub" id="kpi-dany-delta">—</div>
+      </div>
+    </div>
+
+    <div class="progress-card">
+      <div class="progress-header">
+        <div>
+          <div class="progress-title">🏠 Progresso para Casa</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:4px" id="progress-desc">—</div>
+        </div>
+        <div class="progress-pct" id="progress-pct">—%</div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+      </div>
+      <div class="progress-footer">
+        <div>Atual: <span id="progress-current">—</span></div>
+        <div>Objetivo: <span id="progress-goal">—</span></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Patrimônio Total <span>últimos 12 meses</span></div>
+      <div class="chart-wrap"><canvas id="chart-dash-total"></canvas></div>
+    </div>
+
+    <div class="person-row">
+      <div class="person-card">
+        <div class="person-name"><div class="dot dot-ines"></div> Inês</div>
+        <div class="person-total ines" id="person-ines-total">—</div>
+        <div class="person-casa">Para casa: <strong id="person-ines-casa">—</strong></div>
+      </div>
+      <div class="person-card">
+        <div class="person-name"><div class="dot dot-dany"></div> Dany</div>
+        <div class="person-total dany" id="person-dany-total">—</div>
+        <div class="person-casa">Para casa: <strong id="person-dany-casa">—</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVOLUÇÃO -->
+  <div id="tab-evolucao" class="tab-panel">
+    <div class="chart-card">
+      <div class="chart-title">Patrimônio Total ao Longo do Tempo <span>Inês + Dany</span></div>
+      <div class="chart-wrap"><canvas id="chart-total-time"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Dinheiro Disponível para Casa <span>vs objetivo</span></div>
+      <div class="chart-wrap"><canvas id="chart-casa-time"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Evolução Individual <span>patrimônio de cada um</span></div>
+      <div class="chart-wrap"><canvas id="chart-individual-time"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Variação Mensal do Patrimônio Total <span>ganho/perda</span></div>
+      <div class="chart-wrap"><canvas id="chart-monthly-delta"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ATIVOS -->
+  <div id="tab-ativos" class="tab-panel">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-title">Distribuição Inês</div>
+        <div class="chart-wrap"><canvas id="chart-pie-ines" style="max-height:200px"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-title">Distribuição Dany</div>
+        <div class="chart-wrap"><canvas id="chart-pie-dany" style="max-height:200px"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Ativos por Categoria <span>mês mais recente</span></div>
+      <div class="chart-wrap"><canvas id="chart-assets-bar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="section-title">Detalhe de Ativos</div>
+      <div class="table-wrap">
+        <table class="asset-table">
+          <thead>
+            <tr>
+              <th>Ativo</th>
+              <th style="text-align:right">Inês</th>
+              <th style="text-align:right">Dany</th>
+              <th style="text-align:right">Total</th>
+            </tr>
+          </thead>
+          <tbody id="asset-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADICIONAR -->
+  <div id="tab-adicionar" class="tab-panel">
+    <div class="form-section">
+      <h3>📅 Data do Registo</h3>
+      <div class="form-grid">
+        <div class="form-group form-row">
+          <label>Mês</label>
+          <input type="month" id="f-date" />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>🏦 Contas</h3>
+      <div class="form-grid">
+        <div class="form-group"><label>Conta à Ordem — Inês</label><input type="number" id="f-ordem-ines" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Conta à Ordem — Dany</label><input type="number" id="f-ordem-dany" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Conta Poupança — Inês</label><input type="number" id="f-poupanca-ines" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Conta Poupança — Dany</label><input type="number" id="f-poupanca-dany" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Conta Conjunta</label><input type="number" id="f-conjunta-ines" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Certificados — Inês</label><input type="number" id="f-cert-ines" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Certificados — Dany</label><input type="number" id="f-cert-dany" placeholder="0.00" step="0.01"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>📈 Investimentos</h3>
+      <div class="form-grid">
+        <div class="form-group"><label>TR Carteira — Inês</label><input type="number" id="f-tr-cart-ines" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>TR Carteira — Dany</label><input type="number" id="f-tr-cart-dany" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>TR Saldo — Inês</label><input type="number" id="f-tr-saldo-ines" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>TR Saldo — Dany</label><input type="number" id="f-tr-saldo-dany" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>PPR — Inês</label><input type="number" id="f-ppr-ines" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>PPR — Dany</label><input type="number" id="f-ppr-dany" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Ações Accenture — Inês</label><input type="number" id="f-acc-ines" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Ações Accenture — Dany</label><input type="number" id="f-acc-dany" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>DEGIRO — Dany</label><input type="number" id="f-degiro-dany" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>XTB — Dany</label><input type="number" id="f-xtb-dany" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Trust Wallet — Dany</label><input type="number" id="f-trust-dany" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>CGD Pensões — Inês</label><input type="number" id="f-cgd-ines" placeholder="0.00" step="0.01"></div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="saveEntry()">💾 Guardar Registo</button>
+    <div class="success-msg" id="save-success">✅ Registo guardado com sucesso!</div>
+  </div>
+
+</div>
+
+<!-- Goal Modal -->
+<div class="modal-bg" id="goal-modal">
+  <div class="modal">
+    <h3>🏠 Definir Objetivo de Casa</h3>
+    <div class="form-group">
+      <label>Valor necessário para entrada (€)</label>
+      <input type="number" id="goal-input" placeholder="ex: 100000" step="1000">
+    </div>
+    <div class="modal-btns">
+      <button class="btn" style="margin-top:0" onclick="saveGoal()">Guardar</button>
+      <button class="btn btn-secondary" style="margin-top:0" onclick="closeGoalModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const HISTORICAL = [{"date": "2024-01", "assets": {"Conta à Ordem": {"ines": 947.53, "dany": 605.12}, "Conta Poupança": {"ines": 1393.74, "dany": 1387.15}, "Conta Conjunta": {"ines": 913.49, "dany": null}, "Certificados de Aforro": {"ines": 36000.0, "dany": 4500.0}, "Trade Republic (Saldo)": {"ines": 3276.61, "dany": 2985.66}, "PPR": {"ines": null, "dany": 2200.0}, "Ações Accenture": {"ines": 1238.77, "dany": 3407.44}, "DEGIRO": {"ines": null, "dany": 663.34}, "XTB": {"ines": null, "dany": 142.59}}, "summary": {"Total juntos": {"ines": 59661.44, "dany": null}, "Total Individual": {"ines": 42856.65, "dany": 15891.3}, "Dinheiro total possivel casa": {"ines": 51095.81, "dany": null}, "Dinheiro possivel casa individual": {"ines": 41617.88, "dany": 9477.93}, "Ganho/Perda Casa Total Mensal": {"ines": null, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": null, "dany": null}, "Dinheiro investido total (não possível casa)": {"ines": 14979.0, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 8565.63, "dany": 6413.37}}}, {"date": "2024-02", "assets": {"Conta à Ordem": {"ines": 1145.67, "dany": 774.67}, "Conta Poupança": {"ines": 1123.14, "dany": 451.15}, "Conta Conjunta": {"ines": 980.9, "dany": null}, "Certificados de Aforro": {"ines": 15100.0, "dany": 4500.0}, "Trade Republic (Saldo)": {"ines": 258.54, "dany": 64.17}, "PPR": {"ines": null, "dany": 2200.0}, "Ações Accenture": {"ines": 1238.77, "dany": 3407.44}, "DEGIRO": {"ines": null, "dany": 682.15}, "XTB": {"ines": null, "dany": 145.87}}, "summary": {"Total juntos": {"ines": 32072.47, "dany": null}, "Total Individual": {"ines": 18866.12, "dany": 12225.45}, "Dinheiro total possivel casa": {"ines": 23417.34, "dany": null}, "Dinheiro possivel casa individual": {"ines": 17627.35, "dany": 5789.99}, "Ganho/Perda Casa Total Mensal": {"ines": -27678.47, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": -23990.53, "dany": -3687.94}, "Dinheiro investido total (não possível casa)": {"ines": 15090.59, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 8655.13, "dany": 6435.46}}}, {"date": "2024-03", "assets": {"Conta à Ordem": {"ines": 1041.64, "dany": 976.6}, "Conta Poupança": {"ines": 1803.14, "dany": 1271.15}, "Conta Conjunta": {"ines": 1087.69, "dany": null}, "Certificados de Aforro": {"ines": 15100.0, "dany": 4500.0}, "Trade Republic (Saldo)": {"ines": 234.4, "dany": 39.88}, "PPR": {"ines": null, "dany": 2200.0}, "Ações Accenture": {"ines": 1238.77, "dany": 3407.44}, "DEGIRO": {"ines": null, "dany": 702.75}, "XTB": {"ines": null, "dany": 149.3}}, "summary": {"Total juntos": {"ines": 33752.76, "dany": null}, "Total Individual": {"ines": 19417.95, "dany": 13247.12}, "Dinheiro total possivel casa": {"ines": 24966.81, "dany": null}, "Dinheiro possivel casa individual": {"ines": 18179.18, "dany": 6787.63}, "Ganho/Perda Casa Total Mensal": {"ines": 1549.47, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 551.83, "dany": 997.64}, "Dinheiro investido total (não possível casa)": {"ines": 15245.44, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 8785.95, "dany": 6459.49}}}, {"date": "2024-04", "assets": {"Conta à Ordem": {"ines": 960.17, "dany": 1299.65}, "Conta Poupança": {"ines": 1353.93, "dany": 1001.15}, "Conta Conjunta": {"ines": 905.72, "dany": null}, "Certificados de Aforro": {"ines": 15564.93, "dany": 4660.09}, "Trade Republic (Carteira)": {"ines": 252.49, "dany": 249.32}, "Trade Republic (Saldo)": {"ines": 1205.3, "dany": 1280.04}, "PPR": {"ines": null, "dany": 2200.0}, "Ações Accenture": {"ines": 1180.37, "dany": 3407.44}, "DEGIRO": {"ines": null, "dany": 685.82}, "XTB": {"ines": null, "dany": 147.03}}, "summary": {"Total juntos": {"ines": 35447.73, "dany": null}, "Total Individual": {"ines": 20517.19, "dany": 14930.54}, "Dinheiro total possivel casa": {"ines": 27325.26, "dany": null}, "Dinheiro possivel casa individual": {"ines": 19084.33, "dany": 8240.93}, "Ganho/Perda Casa Total Mensal": {"ines": 2358.45, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 905.15, "dany": 1453.3}, "Dinheiro investido total (não possível casa)": {"ines": 8122.47, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 1432.86, "dany": 6689.61}}}, {"date": "2024-05", "assets": {"Conta à Ordem": {"ines": 1417.22, "dany": 1013.86}, "Conta Poupança": {"ines": 983.93, "dany": 1201.15}, "Conta Conjunta": {"ines": 903.71, "dany": null}, "Certificados de Aforro": {"ines": 15676.97, "dany": 4671.22}, "Trade Republic (Carteira)": {"ines": 291.74, "dany": 289.31}, "Trade Republic (Saldo)": {"ines": 1779.01, "dany": 3893.94}, "PPR": {"ines": null, "dany": 3017.05}, "Ações Accenture": {"ines": 1926.95, "dany": 4495.43}, "DEGIRO": {"ines": null, "dany": 704.25}, "XTB": {"ines": null, "dany": 149.74}}, "summary": {"Total juntos": {"ines": 41511.77, "dany": null}, "Total Individual": {"ines": 22075.82, "dany": 19435.95}, "Dinheiro total possivel casa": {"ines": 30637.3, "dany": null}, "Dinheiro possivel casa individual": {"ines": 19857.13, "dany": 10780.17}, "Ganho/Perda Casa Total Mensal": {"ines": 3312.04, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 772.8, "dany": 2539.24}, "Dinheiro investido total (não possível casa)": {"ines": 10874.47, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 2218.69, "dany": 8655.78}}}, {"date": "2024-06", "assets": {"Conta à Ordem": {"ines": 2996.67, "dany": 1266.9}, "Conta Poupança": {"ines": 444.35, "dany": 2281.15}, "Conta Conjunta": {"ines": 923.72, "dany": null}, "Certificados de Aforro": {"ines": 15676.97, "dany": 4678.67}, "Trade Republic (Carteira)": {"ines": 549.33, "dany": 337.37}, "Trade Republic (Saldo)": {"ines": 3441.88, "dany": 4632.9}, "PPR": {"ines": 1005.33, "dany": 3100.21}, "Ações Accenture": {"ines": 1997.83, "dany": 4841.73}, "DEGIRO": {"ines": null, "dany": 746.97}, "XTB": {"ines": null, "dany": 153.94}}, "summary": {"Total juntos": {"ines": 48152.2, "dany": null}, "Total Individual": {"ines": 26112.36, "dany": 22039.84}, "Dinheiro total possivel casa": {"ines": 35419.49, "dany": null}, "Dinheiro possivel casa individual": {"ines": 22559.87, "dany": 12859.62}, "Ganho/Perda Casa Total Mensal": {"ines": 4782.19, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 2702.74, "dany": 2079.45}, "Dinheiro investido total (não possível casa)": {"ines": 12732.71, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 3552.49, "dany": 9180.22}}}, {"date": "2024-07", "assets": {"Conta à Ordem": {"ines": 1964.35, "dany": 912.15}, "Conta Poupança": {"ines": 1894.35, "dany": 2281.15}, "Conta Conjunta": {"ines": 901.8, "dany": null}, "Certificados de Aforro": {"ines": 15676.97, "dany": 4693.63}, "Trade Republic (Carteira)": {"ines": 661.07, "dany": 364.64}, "Trade Republic (Saldo)": {"ines": 4327.5, "dany": 4617.25}, "PPR": {"ines": 946.24, "dany": 2927.16}, "Ações Accenture": {"ines": 2121.92, "dany": 5157.45}, "DEGIRO": {"ines": null, "dany": 736.08}, "XTB": {"ines": null, "dany": 153.94}}, "summary": {"Total juntos": {"ines": 49435.85, "dany": null}, "Total Individual": {"ines": 27592.4, "dany": 21843.45}, "Dinheiro total possivel casa": {"ines": 36367.35, "dany": null}, "Dinheiro possivel casa individual": {"ines": 23863.17, "dany": 12504.18}, "Ganho/Perda Casa Total Mensal": {"ines": 947.86, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 1303.3, "dany": -355.44}, "Dinheiro investido total (não possível casa)": {"ines": 13068.5, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 3729.23, "dany": 9339.27}}}, {"date": "2024-08", "assets": {"Conta à Ordem": {"ines": 1303.12, "dany": 496.27}, "Conta Poupança": {"ines": 1494.85, "dany": 1581.15}, "Conta Conjunta": {"ines": 958.96, "dany": null}, "Certificados de Aforro": {"ines": 15789.92, "dany": 4693.63}, "Trade Republic (Carteira)": {"ines": 939.22, "dany": 396.99}, "Trade Republic (Saldo)": {"ines": 5069.15, "dany": 4852.21}, "PPR": {"ines": 956.2, "dany": 3709.53}, "Ações Accenture": {"ines": 2138.13, "dany": 5196.71}, "DEGIRO": {"ines": null, "dany": 737.36}, "XTB": {"ines": null, "dany": 154.69}}, "summary": {"Total juntos": {"ines": 49509.13, "dany": null}, "Total Individual": {"ines": 27690.59, "dany": 21818.54}, "Dinheiro total possivel casa": {"ines": 35280.3, "dany": null}, "Dinheiro possivel casa individual": {"ines": 23657.04, "dany": 11623.26}, "Ganho/Perda Casa Total Mensal": {"ines": -1087.05, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": -206.13, "dany": -880.92}, "Dinheiro investido total (não possível casa)": {"ines": 14228.83, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 4033.55, "dany": 10195.28}}}, {"date": "2024-09", "assets": {"Conta à Ordem": {"ines": 1485.3, "dany": 830.45}, "Conta Poupança": {"ines": 1344.85, "dany": 1281.15}, "Conta Conjunta": {"ines": 1105.01, "dany": null}, "Certificados de Aforro": {"ines": 15789.92, "dany": 4712.36}, "Trade Republic (Carteira)": {"ines": 959.31, "dany": 435.56}, "Trade Republic (Saldo)": {"ines": 6085.53, "dany": 4837.77}, "PPR": {"ines": 972.07, "dany": 3777.57}, "Ações Accenture": {"ines": 2226.38, "dany": 5459.41}, "DEGIRO": {"ines": null, "dany": 752.92}, "XTB": {"ines": null, "dany": 157.5}}, "summary": {"Total juntos": {"ines": 51108.05, "dany": null}, "Total Individual": {"ines": 28863.36, "dany": 22244.69}, "Dinheiro total possivel casa": {"ines": 36367.33, "dany": null}, "Dinheiro possivel casa individual": {"ines": 24705.6, "dany": 11661.73}, "Ganho/Perda Casa Total Mensal": {"ines": 1087.03, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 1048.56, "dany": 38.47}, "Dinheiro investido total (não possível casa)": {"ines": 14740.72, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 4157.76, "dany": 10582.96}}}, {"date": "2024-10", "assets": {"Conta à Ordem": {"ines": 1138.28, "dany": 694.45}, "Conta Poupança": {"ines": 1000.66, "dany": 736.69}, "Conta Conjunta": {"ines": 903.52, "dany": null}, "Certificados de Aforro": {"ines": 15789.92, "dany": 4727.44}, "Trade Republic (Carteira)": {"ines": 1087.31, "dany": 481.55}, "Trade Republic (Saldo)": {"ines": 6905.69, "dany": 4822.38}, "PPR": {"ines": 1008.54, "dany": 3912.57}, "Ações Accenture": {"ines": 2369.27, "dany": 5758.16}, "DEGIRO": {"ines": null, "dany": 784.1}, "XTB": {"ines": null, "dany": 160.53}}, "summary": {"Total juntos": {"ines": 51377.54, "dany": null}, "Total Individual": {"ines": 29299.67, "dany": 22077.87}, "Dinheiro total possivel casa": {"ines": 35815.51, "dany": null}, "Dinheiro possivel casa individual": {"ines": 24834.55, "dany": 10980.96}, "Ganho/Perda Casa Total Mensal": {"ines": -551.82, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 128.95, "dany": -680.77}, "Dinheiro investido total (não possível casa)": {"ines": 15562.03, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 4465.12, "dany": 11096.91}}}, {"date": "2024-11", "assets": {"Conta à Ordem": {"ines": 2893.74, "dany": 1214.85}, "Conta Poupança": {"ines": 456.56, "dany": 1000.69}, "Conta Conjunta": {"ines": 1006.05, "dany": null}, "Certificados de Aforro": {"ines": 15903.62, "dany": 4727.44}, "Trade Republic (Carteira)": {"ines": 1132.52, "dany": 534.6}, "Trade Republic (Saldo)": {"ines": 7425.79, "dany": 4806.47}, "PPR": {"ines": 1048.62, "dany": 4293.6}, "Ações Accenture": {"ines": 3450.31, "dany": 7600.59}, "DEGIRO": {"ines": null, "dany": 827.73}, "XTB": {"ines": null, "dany": 165.89}}, "summary": {"Total juntos": {"ines": 57483.02, "dany": null}, "Total Individual": {"ines": 32311.16, "dany": 25171.86}, "Dinheiro total possivel casa": {"ines": 38429.16, "dany": null}, "Dinheiro possivel casa individual": {"ines": 26679.71, "dany": 11749.45}, "Ganho/Perda Casa Total Mensal": {"ines": 2613.65, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 1845.16, "dany": 768.49}, "Dinheiro investido total (não possível casa)": {"ines": 19053.86, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 5631.45, "dany": 13422.41}}}, {"date": "2024-12", "assets": {"Conta à Ordem": {"ines": 2211.25, "dany": 697.23}, "Conta Poupança": {"ines": 1356.88, "dany": 400.69}, "Conta Conjunta": {"ines": 1036.11, "dany": null}, "Certificados de Aforro": {"ines": 15903.62, "dany": 4746.29}, "Trade Republic (Carteira)": {"ines": 1145.34, "dany": 580.66}, "Trade Republic (Saldo)": {"ines": 100.45, "dany": 284.33}, "PPR": {"ines": 1075.77, "dany": 4439.08}, "Ações Accenture": {"ines": 3485.71, "dany": 7996.9}, "DEGIRO": {"ines": null, "dany": 841.76}, "XTB": {"ines": null, "dany": 167.17}}, "summary": {"Total juntos": {"ines": 45433.13, "dany": null}, "Total Individual": {"ines": 25279.02, "dany": 20154.11}, "Dinheiro total possivel casa": {"ines": 25700.74, "dany": null}, "Dinheiro possivel casa individual": {"ines": 19572.2, "dany": 6128.54}, "Ganho/Perda Casa Total Mensal": {"ines": -12728.42, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": -7107.51, "dany": -5620.91}, "Dinheiro investido total (não possível casa)": {"ines": 19732.39, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 5706.82, "dany": 14025.57}}}, {"date": "2025-01", "assets": {"Conta à Ordem": {"ines": 2031.64, "dany": 500.93}, "Conta Poupança": {"ines": 1056.88, "dany": 890.69}, "Conta Conjunta": {"ines": 939.16, "dany": null}, "Certificados de Aforro": {"ines": 15903.62, "dany": 4761.47}, "Trade Republic (Carteira)": {"ines": 1274.86, "dany": 681.92}, "Trade Republic (Saldo)": {"ines": 991.5, "dany": 1186.91}, "PPR": {"ines": 1103.43, "dany": 4553.24}, "Ações Accenture": {"ines": 3617.95, "dany": 7969.56}, "DEGIRO": {"ines": null, "dany": 848.96}, "XTB": {"ines": null, "dany": 169.77}}, "summary": {"Total juntos": {"ines": 47543.33, "dany": null}, "Total Individual": {"ines": 25979.88, "dany": 21563.45}, "Dinheiro total possivel casa": {"ines": 27323.64, "dany": null}, "Dinheiro possivel casa individual": {"ines": 19983.64, "dany": 7340.0}, "Ganho/Perda Casa Total Mensal": {"ines": 1622.9, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 411.44, "dany": 1211.46}, "Dinheiro investido total (não possível casa)": {"ines": 20219.69, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 5996.24, "dany": 14223.45}}}, {"date": "2025-02", "assets": {"Conta à Ordem": {"ines": 1378.37, "dany": 623.83}, "Conta Poupança": {"ines": 1001.3, "dany": 990.69}, "Conta Conjunta": {"ines": 1022.27, "dany": null}, "Certificados de Aforro": {"ines": 16018.08, "dany": 4761.47}, "Trade Republic (Carteira)": {"ines": 1396.78, "dany": 801.07}, "Trade Republic (Saldo)": {"ines": 2256.35, "dany": 1469.89}, "PPR": {"ines": 1330.01, "dany": 4715.76}, "Ações Accenture": {"ines": 3440.95, "dany": 7580.07}, "DEGIRO": {"ines": null, "dany": 832.34}, "XTB": {"ines": null, "dany": 173.31}}, "summary": {"Total juntos": {"ines": 48770.27, "dany": null}, "Total Individual": {"ines": 26821.84, "dany": 21948.43}, "Dinheiro total possivel casa": {"ines": 28499.98, "dany": null}, "Dinheiro possivel casa individual": {"ines": 20654.1, "dany": 7845.88}, "Ganho/Perda Casa Total Mensal": {"ines": 1176.34, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 670.46, "dany": 505.88}, "Dinheiro investido total (não possível casa)": {"ines": 20270.29, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 6167.74, "dany": 14102.55}}}, {"date": "2025-03", "assets": {"Conta à Ordem": {"ines": 638.6, "dany": 790.56}, "Conta Poupança": {"ines": 721.0, "dany": 679.97}, "Conta Conjunta": {"ines": 1010.85, "dany": null}, "Certificados de Aforro": {"ines": 16018.08, "dany": 4780.46}, "Trade Republic (Carteira)": {"ines": 1490.74, "dany": 853.67}, "Trade Republic (Saldo)": {"ines": 2456.86, "dany": 2612.95}, "PPR": {"ines": 1232.63, "dany": 4373.51}, "Ações Accenture": {"ines": 2866.99, "dany": 6318.29}, "DEGIRO": {"ines": null, "dany": 756.63}, "XTB": {"ines": null, "dany": 161.85}}, "summary": {"Total juntos": {"ines": 46752.79, "dany": null}, "Total Individual": {"ines": 25424.9, "dany": 21327.89}, "Dinheiro total possivel casa": {"ines": 28698.48, "dany": null}, "Dinheiro possivel casa individual": {"ines": 19834.54, "dany": 8863.94}, "Ganho/Perda Casa Total Mensal": {"ines": 198.5, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": -819.56, "dany": 1018.06}, "Dinheiro investido total (não possível casa)": {"ines": 18054.31, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 5590.36, "dany": 12463.95}}}, {"date": "2025-04", "assets": {"Conta à Ordem": {"ines": 1062.35, "dany": 558.92}, "Conta Poupança": {"ines": 1.3, "dany": 429.97}, "Conta Conjunta": {"ines": 922.78, "dany": null}, "Certificados de Aforro": {"ines": 16018.08, "dany": 4795.76}, "Trade Republic (Carteira)": {"ines": 1921.27, "dany": 2117.29}, "Trade Republic (Saldo)": {"ines": 1921.48, "dany": 1315.2}, "PPR": {"ines": 1137.36, "dany": 4032.68}, "Ações Accenture": {"ines": 2637.38, "dany": 5750.13}, "DEGIRO": {"ines": null, "dany": 708.24}, "Trust Wallet": {"ines": null, "dany": 231.18}, "XTB": {"ines": null, "dany": 149.66}}, "summary": {"Total juntos": {"ines": 44788.25, "dany": null}, "Total Individual": {"ines": 24699.22, "dany": 20089.03}, "Dinheiro total possivel casa": {"ines": 26103.06, "dany": null}, "Dinheiro possivel casa individual": {"ines": 19003.21, "dany": 7099.85}, "Ganho/Perda Casa Total Mensal": {"ines": -2595.42, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": -831.33, "dany": -1764.09}, "Dinheiro investido total (não possível casa)": {"ines": 18685.19, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 5696.01, "dany": 12989.18}}}, {"date": "2025-05", "assets": {"Conta à Ordem": {"ines": 3166.19, "dany": 2483.02}, "Conta Poupança": {"ines": 651.3, "dany": 1025.0}, "Conta Conjunta": {"ines": 1052.11, "dany": null}, "Certificados de Aforro": {"ines": 16133.44, "dany": 4795.76}, "Trade Republic (Carteira)": {"ines": 2306.6, "dany": 2428.67}, "Trade Republic (Saldo)": {"ines": 1982.45, "dany": 6448.13}, "PPR": {"ines": 1228.34, "dany": 4851.08}, "Ações Accenture": {"ines": 3677.03, "dany": 7930.99}, "DEGIRO": {"ines": null, "dany": 767.46}, "Trust Wallet": {"ines": null, "dany": 247.62}, "XTB": {"ines": null, "dany": 158.92}}, "summary": {"Total juntos": {"ines": 60282.0, "dany": null}, "Total Individual": {"ines": 29145.35, "dany": 31136.65}, "Dinheiro total possivel casa": {"ines": 36685.29, "dany": null}, "Dinheiro possivel casa individual": {"ines": 21933.38, "dany": 14751.91}, "Ganho/Perda Casa Total Mensal": {"ines": 10582.23, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 2930.17, "dany": 7652.06}, "Dinheiro investido total (não possível casa)": {"ines": 23596.71, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 7211.97, "dany": 16384.74}}}, {"date": "2025-06", "assets": {"Conta à Ordem": {"ines": 2772.85, "dany": 613.37}, "Conta Poupança": {"ines": 401.47, "dany": 1050.87}, "Conta Conjunta": {"ines": 1008.84, "dany": null}, "Certificados de Aforro": {"ines": 16133.44, "dany": 4814.89}, "Trade Republic (Carteira)": {"ines": 2486.58, "dany": 2537.72}, "Trade Republic (Saldo)": {"ines": 11262.26, "dany": 6917.1}, "PPR": {"ines": 1198.77, "dany": 5223.66}, "Ações Accenture": {"ines": 3328.46, "dany": 7080.53}, "DEGIRO": {"ines": null, "dany": 770.61}, "Trust Wallet": {"ines": null, "dany": 306.91}, "XTB": {"ines": null, "dany": 834.02}}, "summary": {"Total juntos": {"ines": 67733.51, "dany": null}, "Total Individual": {"ines": 37583.83, "dany": 30149.68}, "Dinheiro total possivel casa": {"ines": 43966.25, "dany": null}, "Dinheiro possivel casa individual": {"ines": 30570.02, "dany": 13396.23}, "Ganho/Perda Casa Total Mensal": {"ines": 7280.96, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 8636.64, "dany": -1355.68}, "Dinheiro investido total (não possível casa)": {"ines": 23767.26, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 7013.81, "dany": 16753.45}}}, {"date": "2025-07", "assets": {"Conta à Ordem": {"ines": 1411.86, "dany": 446.15}, "Conta Poupança": {"ines": 707.47, "dany": 1076.97}, "Conta Conjunta": {"ines": 870.08, "dany": null}, "Certificados de Aforro": {"ines": 16133.44, "dany": 4829.97}, "Trade Republic (Carteira)": {"ines": 2684.97, "dany": 2836.42}, "Trade Republic (Saldo)": {"ines": 12127.69, "dany": 6636.19}, "PPR": {"ines": 1281.79, "dany": 6851.09}, "Ações Accenture": {"ines": 3188.64, "dany": 6682.64}, "DEGIRO": {"ines": null, "dany": 821.64}, "Trust Wallet": {"ines": null, "dany": 473.28}, "XTB": {"ines": null, "dany": 858.79}}, "summary": {"Total juntos": {"ines": 69049.0, "dany": null}, "Total Individual": {"ines": 37535.86, "dany": 31513.14}, "Dinheiro total possivel casa": {"ines": 43369.74, "dany": null}, "Dinheiro possivel casa individual": {"ines": 30380.46, "dany": 12989.28}, "Ganho/Perda Casa Total Mensal": {"ines": -596.51, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": -189.56, "dany": -406.95}, "Dinheiro investido total (não possível casa)": {"ines": 25679.26, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 7155.4, "dany": 18523.86}}}, {"date": "2025-08", "assets": {"Conta à Ordem": {"ines": 1548.61, "dany": 1628.27}, "Conta Poupança": {"ines": 37.68, "dany": 1103.1}, "Conta Conjunta": {"ines": 910.21, "dany": null}, "Certificados de Aforro": {"ines": 16241.41, "dany": 4829.97}, "Trade Republic (Carteira)": {"ines": 2821.62, "dany": 3014.77}, "Trade Republic (Saldo)": {"ines": 12881.21, "dany": 6125.61}, "PPR": {"ines": 1537.07, "dany": 6894.34}, "Ações Accenture": {"ines": 2937.06, "dany": 6236.63}, "DEGIRO": {"ines": null, "dany": 816.22}, "Trust Wallet": {"ines": null, "dany": 452.37}, "XTB": {"ines": null, "dany": 872.38}}, "summary": {"Total juntos": {"ines": 69978.32, "dany": null}, "Total Individual": {"ines": 38004.66, "dany": 31973.66}, "Dinheiro total possivel casa": {"ines": 44395.86, "dany": null}, "Dinheiro possivel casa individual": {"ines": 30708.91, "dany": 13686.95}, "Ganho/Perda Casa Total Mensal": {"ines": 1026.12, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 328.45, "dany": 697.67}, "Dinheiro investido total (não possível casa)": {"ines": 25582.46, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 7295.75, "dany": 18286.71}}}, {"date": "2025-09", "assets": {"Conta à Ordem": {"ines": 2076.1, "dany": 640.67}, "Conta Poupança": {"ines": 37.68, "dany": 828.94}, "Conta Conjunta": {"ines": 882.14, "dany": null}, "Certificados de Aforro": {"ines": 16241.41, "dany": 4847.6}, "Trade Republic (Carteira)": {"ines": 2972.7, "dany": 3290.0}, "Trade Republic (Saldo)": {"ines": 13356.35, "dany": 7328.11}, "PPR": {"ines": 1547.2, "dany": 6934.33}, "Ações Accenture": {"ines": 2642.74, "dany": 5578.9}, "DEGIRO": {"ines": null, "dany": 831.77}, "Trust Wallet": {"ines": null, "dany": 410.04}, "XTB": {"ines": null, "dany": 990.16}}, "summary": {"Total juntos": {"ines": 70554.7, "dany": null}, "Total Individual": {"ines": 38874.18, "dany": 31680.52}, "Dinheiro total possivel casa": {"ines": 45356.86, "dany": null}, "Dinheiro possivel casa individual": {"ines": 31711.54, "dany": 13645.32}, "Ganho/Perda Casa Total Mensal": {"ines": 961.0, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 1002.63, "dany": -41.63}, "Dinheiro investido total (não possível casa)": {"ines": 25197.84, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 7162.64, "dany": 18035.2}}}, {"date": "2025-10", "assets": {"Conta à Ordem": {"ines": 1604.87, "dany": 767.35}, "Conta Poupança": {"ines": 287.7, "dany": 654.13}, "Conta Conjunta": {"ines": 828.93, "dany": null}, "Certificados de Aforro": {"ines": 16241.41, "dany": 4861.22}, "Trade Republic (Carteira)": {"ines": 3248.8, "dany": 3657.86}, "Trade Republic (Saldo)": {"ines": 13360.85, "dany": 6779.23}, "PPR": {"ines": 1739.56, "dany": 7551.3}, "Ações Accenture": {"ines": 2818.14, "dany": 5980.93}, "DEGIRO": {"ines": null, "dany": 870.34}, "Trust Wallet": {"ines": null, "dany": 391.22}, "XTB": {"ines": null, "dany": 980.0}}, "summary": {"Total juntos": {"ines": 71794.91, "dany": null}, "Total Individual": {"ines": 39301.33, "dany": 32493.58}, "Dinheiro total possivel casa": {"ines": 44556.76, "dany": null}, "Dinheiro possivel casa individual": {"ines": 31494.83, "dany": 13061.93}, "Ganho/Perda Casa Total Mensal": {"ines": -800.1, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": -216.71, "dany": -583.39}, "Dinheiro investido total (não possível casa)": {"ines": 27238.15, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 7806.5, "dany": 19431.65}}}, {"date": "2025-11", "assets": {"Conta à Ordem": {"ines": 3247.81, "dany": 1748.48}, "Conta Poupança": {"ines": 37.7, "dany": 54.13}, "Conta Conjunta": {"ines": 878.35, "dany": null}, "Certificados de Aforro": {"ines": 16343.33, "dany": 4861.22}, "Trade Republic (Carteira)": {"ines": 3320.65, "dany": 3632.61}, "Trade Republic (Saldo)": {"ines": 12114.42, "dany": 5569.42}, "PPR": {"ines": 2312.97, "dany": 7763.93}, "Ações Accenture": {"ines": 3700.36, "dany": 6069.38}, "DEGIRO": {"ines": null, "dany": 845.85}, "Trust Wallet": {"ines": null, "dany": 313.86}, "XTB": {"ines": null, "dany": 883.29}}, "summary": {"Total juntos": {"ines": 72819.41, "dany": null}, "Total Individual": {"ines": 41077.24, "dany": 31742.17}, "Dinheiro total possivel casa": {"ines": 43976.51, "dany": null}, "Dinheiro possivel casa individual": {"ines": 31743.26, "dany": 12233.25}, "Ganho/Perda Casa Total Mensal": {"ines": -580.25, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 248.43, "dany": -828.68}, "Dinheiro investido total (não possível casa)": {"ines": 28842.9, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 9333.98, "dany": 19508.92}}}, {"date": "2025-12", "assets": {"Conta à Ordem": {"ines": 1428.11, "dany": 191.6}, "Conta Poupança": {"ines": 37.72, "dany": 104.16}, "Conta Conjunta": {"ines": 907.79, "dany": null}, "Certificados de Aforro": {"ines": 16343.33, "dany": 4878.2}, "Trade Republic (Carteira)": {"ines": 3442.1, "dany": 3757.3}, "Trade Republic (Saldo)": {"ines": 15887.89, "dany": 6887.02}, "PPR": {"ines": 2667.02, "dany": 8196.53}, "Ações Accenture": {"ines": 3984.14, "dany": 6507.85}, "DEGIRO": {"ines": null, "dany": 863.66}, "Trust Wallet": {"ines": null, "dany": 282.0}, "XTB": {"ines": null, "dany": 875.63}}, "summary": {"Total juntos": {"ines": 76334.26, "dany": null}, "Total Individual": {"ines": 43790.31, "dany": 32543.95}, "Dinheiro total possivel casa": {"ines": 45758.03, "dany": null}, "Dinheiro possivel casa individual": {"ines": 33697.05, "dany": 12060.98}, "Ganho/Perda Casa Total Mensal": {"ines": 1781.52, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 1953.79, "dany": -172.27}, "Dinheiro investido total (não possível casa)": {"ines": 30576.23, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 10093.26, "dany": 20482.97}}}, {"date": "2026-02", "assets": {"Conta à Ordem": {"ines": 1434.67, "dany": 633.97}, "Conta Poupança": {"ines": 37.74, "dany": 479.25}, "Conta Conjunta": {"ines": 989.42, "dany": null}, "Certificados de Aforro": {"ines": 16447.52, "dany": 4891.9}, "Trade Republic (Carteira)": {"ines": 3627.39, "dany": 3854.11}, "Trade Republic (Saldo)": {"ines": 15900.85, "dany": 7140.68}, "PPR": {"ines": 2623.48, "dany": 8267.1}, "Ações Accenture": {"ines": 3482.14, "dany": 5690.01}, "DEGIRO": {"ines": null, "dany": 852.48}, "Trust Wallet": {"ines": null, "dany": 193.42}, "XTB": {"ines": null, "dany": 927.69}, "CGD Pensões": {"ines": 302.27, "dany": null}}, "summary": {"Total juntos": {"ines": 76786.67, "dany": null}, "Total Individual": {"ines": 43856.06, "dany": 32930.61}, "Dinheiro total possivel casa": {"ines": 46966.58, "dany": null}, "Dinheiro possivel casa individual": {"ines": 33820.78, "dany": 13145.8}, "Ganho/Perda Casa Total Mensal": {"ines": 1208.55, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 123.73, "dany": 1084.82}, "Dinheiro investido total (não possível casa)": {"ines": 29820.09, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 10035.28, "dany": 19784.81}}}, {"date": "2026-02b", "assets": {"Conta à Ordem": {"ines": 1553.74, "dany": 211.04}, "Conta Poupança": {"ines": 37.74, "dany": 504.39}, "Conta Conjunta": {"ines": 904.33, "dany": null}, "Certificados de Aforro": {"ines": 16447.52, "dany": 4891.9}, "Trade Republic (Carteira)": {"ines": 3765.52, "dany": 3972.55}, "Trade Republic (Saldo)": {"ines": 16065.69, "dany": 9006.04}, "PPR": {"ines": 2529.39, "dany": 7964.9}, "Ações Accenture": {"ines": 2758.31, "dany": 4622.1}, "DEGIRO": {"ines": null, "dany": 865.89}, "Trust Wallet": {"ines": null, "dany": 213.7}, "XTB": {"ines": null, "dany": 975.8}, "CGD Pensões": {"ines": 357.74, "dany": null}}, "summary": {"Total juntos": {"ines": 76386.22, "dany": null}, "Total Individual": {"ines": 43515.65, "dany": 33990.41}, "Dinheiro total possivel casa": {"ines": 48718.06, "dany": null}, "Dinheiro possivel casa individual": {"ines": 34104.69, "dany": 14613.37}, "Ganho/Perda Casa Total Mensal": {"ines": 1751.48, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 283.91, "dany": 1467.57}, "Dinheiro investido total (não possível casa)": {"ines": 28788.0, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 9410.96, "dany": 19377.04}}}, {"date": "2026-03", "assets": {"Conta à Ordem": {"ines": 1405.88, "dany": 724.48}, "Conta Poupança": {"ines": 37.74, "dany": 529.54}, "Conta Conjunta": {"ines": 882.56, "dany": null}, "Certificados de Aforro": {"ines": 16447.52, "dany": 4909.21}, "Trade Republic (Carteira)": {"ines": 3678.03, "dany": 3801.09}, "Trade Republic (Saldo)": {"ines": 15048.75, "dany": 8059.66}, "PPR": {"ines": 2402.37, "dany": 7684.89}, "Ações Accenture": {"ines": 2966.44, "dany": 4849.77}, "DEGIRO": {"ines": null, "dany": 824.87}, "Trust Wallet": {"ines": null, "dany": 204.37}, "XTB": {"ines": null, "dany": 1031.99}, "CGD Pensões": {"ines": 394.76, "dany": null}}, "summary": {"Total juntos": {"ines": 74606.6, "dany": null}, "Total Individual": {"ines": 42381.49, "dany": 33447.49}, "Dinheiro total possivel casa": {"ines": 47162.78, "dany": null}, "Dinheiro possivel casa individual": {"ines": 32939.89, "dany": 14222.89}, "Ganho/Perda Casa Total Mensal": {"ines": -1555.28, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": -1164.8, "dany": -390.48}, "Dinheiro investido total (não possível casa)": {"ines": 28666.2, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 9441.6, "dany": 19224.6}}}, {"date": "2026-04", "assets": {"Conta à Ordem": {"ines": 1671.17, "dany": 466.7}, "Conta Poupança": {"ines": 37.76, "dany": 554.7}, "Conta Conjunta": {"ines": 841.25, "dany": null}, "Certificados de Aforro": {"ines": 16447.52, "dany": 4923.13}, "Trade Republic (Carteira)": {"ines": 4130.72, "dany": 4364.3}, "Trade Republic (Saldo)": {"ines": 14696.25, "dany": 8503.19}, "PPR": {"ines": 2544.88, "dany": 8919.77}, "Ações Accenture": {"ines": 2665.08, "dany": 4351.3}, "DEGIRO": {"ines": null, "dany": 903.69}, "Trust Wallet": {"ines": null, "dany": 211.77}, "XTB": {"ines": null, "dany": 1110.64}, "CGD Pensões": {"ines": 455.71, "dany": null}}, "summary": {"Total juntos": {"ines": 76958.28, "dany": null}, "Total Individual": {"ines": 42649.09, "dany": 34309.19}, "Dinheiro total possivel casa": {"ines": 47300.42, "dany": null}, "Dinheiro possivel casa individual": {"ines": 32852.7, "dany": 14447.72}, "Ganho/Perda Casa Total Mensal": {"ines": 137.64, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": -87.19, "dany": 224.83}, "Dinheiro investido total (não possível casa)": {"ines": 29657.86, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 9796.39, "dany": 19861.47}}}, {"date": "2026-05", "assets": {"Conta à Ordem": {"ines": 1836.14, "dany": 356.11}, "Conta Poupança": {"ines": 37.76, "dany": 579.87}, "Conta Conjunta": {"ines": 858.78, "dany": null}, "Certificados de Aforro": {"ines": 16552.02, "dany": 4923.13}, "Trade Republic (Carteira)": {"ines": 4540.4, "dany": 4837.92}, "Trade Republic (Saldo)": {"ines": 19052.68, "dany": 9951.23}, "PPR": {"ines": 2609.46, "dany": 9129.68}, "Ações Accenture": {"ines": 3793.71, "dany": null}, "DEGIRO": {"ines": null, "dany": 956.54}, "Trust Wallet": {"ines": null, "dany": 200.84}, "XTB": {"ines": null, "dany": 1153.78}, "CGD Pensões": {"ines": 514.43, "dany": null}}, "summary": {"Total juntos": {"ines": 80511.27, "dany": null}, "Total Individual": {"ines": 48936.6, "dany": 33042.04}, "Dinheiro total possivel casa": {"ines": 53288.94, "dany": null}, "Dinheiro possivel casa individual": {"ines": 37478.6, "dany": 15810.34}, "Ganho/Perda Casa Total Mensal": {"ines": 5988.52, "dany": null}, "Ganho/Perda Casa Individual Mensal": {"ines": 4625.9, "dany": 1362.62}, "Dinheiro investido total (não possível casa)": {"ines": 28689.7, "dany": null}, "Dinheiro investido individual (não possível casa)": {"ines": 11458.0, "dany": 17231.7}}}];
+
+const ASSET_COLORS = {
+  'Conta à Ordem': '#6c63ff',
+  'Conta Poupança': '#8b5cf6',
+  'Conta Conjunta': '#a78bfa',
+  'Certificados de Aforro': '#43d68a',
+  'Trade Republic (Carteira)': '#ffd166',
+  'Trade Republic (Saldo)': '#ffb347',
+  'PPR': '#ff6584',
+  'Ações Accenture': '#4fc3f7',
+  'DEGIRO': '#81d4fa',
+  'XTB': '#b3e5fc',
+  'Trust Wallet': '#ff9f43',
+  'CGD Pensões': '#ff7eb3'
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let goal = parseFloat(localStorage.getItem('house_goal') || '100000');
+let userEntries = JSON.parse(localStorage.getItem('user_entries') || '[]');
+
+function getAllData() {
+  const combined = [...HISTORICAL, ...userEntries];
+  combined.sort((a,b) => a.date.localeCompare(b.date));
+  return combined;
+}
+
+function fmt(val) {
+  if (val === null || val === undefined) return '—';
+  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+}
+function fmtShort(val) {
+  if (!val) return '0€';
+  if (val >= 1000) return (val/1000).toFixed(1) + 'k€';
+  return Math.round(val) + '€';
+}
+function delta(a, b) {
+  const d = a - b;
+  const sign = d >= 0 ? '+' : '';
+  return { text: sign + fmt(d), up: d >= 0 };
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+const charts = {};
+const commonOptions = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: { legend: { labels: { color: '#8b90b0', font: { size: 11 }, boxWidth: 12 } } },
+  scales: {
+    x: { ticks: { color: '#8b90b0', font: { size: 10 } }, grid: { color: '#2e3350' } },
+    y: { ticks: { color: '#8b90b0', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: '#2e3350' } }
+  }
+};
+
+function makeChart(id, config) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, config);
+}
+
+function formatDateLabel(d) {
+  if (!d) return d;
+  const base = d.replace('b','');
+  const [y, m] = base.split('-');
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return (months[parseInt(m)-1] || m) + ' ' + y.slice(2);
+}
+
+// ============================================================
+// INIT DASHBOARD
+// ============================================================
+function initDashboard() {
+  const data = getAllData();
+  const last = data[data.length - 1];
+  const prev = data[data.length - 2];
+
+  if (!last) return;
+
+  const s = last.summary || {};
+  const total = s['Total juntos']?.ines || 0;
+  const casa = s['Dinheiro total possivel casa']?.ines || 0;
+  const ines = s['Total Individual']?.ines || 0;
+  const dany = s['Total Individual']?.dany || 0;
+
+  const prevS = prev?.summary || {};
+  const prevTotal = prevS['Total juntos']?.ines || 0;
+  const prevCasa = prevS['Dinheiro total possivel casa']?.ines || 0;
+  const prevInes = prevS['Total Individual']?.ines || 0;
+  const prevDany = prevS['Total Individual']?.dany || 0;
+
+  document.getElementById('kpi-total').textContent = fmt(total);
+  document.getElementById('kpi-casa').textContent = fmt(casa);
+  document.getElementById('kpi-ines').textContent = fmt(ines);
+  document.getElementById('kpi-dany').textContent = fmt(dany);
+
+  function setDelta(id, cur, pre) {
+    const el = document.getElementById(id);
+    const d = delta(cur, pre);
+    el.textContent = d.text + ' vs mês ant.';
+    el.className = 'card-sub ' + (d.up ? 'up' : 'down');
+  }
+  setDelta('kpi-total-delta', total, prevTotal);
+  setDelta('kpi-casa-delta', casa, prevCasa);
+  setDelta('kpi-ines-delta', ines, prevInes);
+  setDelta('kpi-dany-delta', dany, prevDany);
+
+  // Progress bar
+  const pct = Math.min(100, Math.round(casa / goal * 100));
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-current').textContent = fmt(casa);
+  document.getElementById('progress-goal').textContent = fmt(goal);
+  document.getElementById('goal-display').textContent = fmt(goal);
+  const falta = goal - casa;
+  document.getElementById('progress-desc').textContent = falta > 0
+    ? 'Faltam ' + fmt(falta) + ' para atingir o objetivo'
+    : '🎉 Objetivo atingido!';
+
+  // Last update
+  document.getElementById('last-update').textContent = 'Último registo: ' + formatDateLabel(last.date);
+
+  // Individual cards
+  const casaI = s['Dinheiro possivel casa individual']?.ines || 0;
+  const casaD = s['Dinheiro possivel casa individual']?.dany || 0;
+  document.getElementById('person-ines-total').textContent = fmt(ines);
+  document.getElementById('person-dany-total').textContent = fmt(dany);
+  document.getElementById('person-ines-casa').textContent = fmt(casaI);
+  document.getElementById('person-dany-casa').textContent = fmt(casaD);
+
+  // Mini chart (last 12 months)
+  const recent = data.slice(-12);
+  const labels = recent.map(d => formatDateLabel(d.date));
+  const totals = recent.map(d => (d.summary?.['Total juntos']?.ines || 0));
+  const inesArr = recent.map(d => (d.summary?.['Total Individual']?.ines || 0));
+  const danyArr = recent.map(d => (d.summary?.['Total Individual']?.dany || 0));
+
+  makeChart('chart-dash-total', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Inês', data: inesArr, borderColor: '#ff6584', backgroundColor: 'rgba(255,101,132,0.15)', fill: true, tension: 0.4, pointRadius: 3 },
+        { label: 'Dany', data: danyArr, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.15)', fill: true, tension: 0.4, pointRadius: 3 }
+      ]
+    },
+    options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { mode: 'index', callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) } } } }
+  });
+}
+
+// ============================================================
+// INIT EVOLUÇÃO
+// ============================================================
+function initEvolucao() {
+  const data = getAllData();
+  const labels = data.map(d => formatDateLabel(d.date));
+
+  const totals = data.map(d => d.summary?.['Total juntos']?.ines || 0);
+  const casas = data.map(d => d.summary?.['Dinheiro total possivel casa']?.ines || 0);
+  const inesArr = data.map(d => d.summary?.['Total Individual']?.ines || 0);
+  const danyArr = data.map(d => d.summary?.['Total Individual']?.dany || 0);
+  const goalLine = data.map(() => goal);
+
+  // Total over time
+  makeChart('chart-total-time', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Patrimônio Total', data: totals, borderColor: '#43d68a', backgroundColor: 'rgba(67,214,138,0.1)', fill: true, tension: 0.4, pointRadius: 3 }
+      ]
+    },
+    options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } } } }
+  });
+
+  // Casa over time
+  makeChart('chart-casa-time', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Dinheiro para Casa', data: casas, borderColor: '#ffd166', backgroundColor: 'rgba(255,209,102,0.1)', fill: true, tension: 0.4, pointRadius: 3 },
+        { label: 'Objetivo', data: goalLine, borderColor: '#ef5350', borderDash: [6,4], pointRadius: 0, borderWidth: 2 }
+      ]
+    },
+    options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) } } } }
+  });
+
+  // Individual over time
+  makeChart('chart-individual-time', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Inês', data: inesArr, borderColor: '#ff6584', backgroundColor: 'rgba(255,101,132,0.1)', fill: true, tension: 0.4, pointRadius: 3 },
+        { label: 'Dany', data: danyArr, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.1)', fill: true, tension: 0.4, pointRadius: 3 }
+      ]
+    },
+    options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { mode: 'index', callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) } } } }
+  });
+
+  // Monthly delta (bar)
+  const deltas = [];
+  for (let i = 1; i < data.length; i++) {
+    const t = data[i].summary?.['Total juntos']?.ines || 0;
+    const p = data[i-1].summary?.['Total juntos']?.ines || 0;
+    deltas.push(t - p);
+  }
+  const deltaLabels = data.slice(1).map(d => formatDateLabel(d.date));
+  const barColors = deltas.map(v => v >= 0 ? 'rgba(67,214,138,0.8)' : 'rgba(239,83,80,0.8)');
+
+  makeChart('chart-monthly-delta', {
+    type: 'bar',
+    data: {
+      labels: deltaLabels,
+      datasets: [{ label: 'Variação Mensal', data: deltas, backgroundColor: barColors, borderRadius: 4 }]
+    },
+    options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } } } }
+  });
+}
+
+// ============================================================
+// INIT ATIVOS
+// ============================================================
+function initAtivos() {
+  const data = getAllData();
+  const last = data[data.length - 1];
+  if (!last) return;
+
+  const ASSET_KEYS = ['Conta à Ordem','Conta Poupança','Conta Conjunta','Certificados de Aforro',
+    'Trade Republic (Carteira)','Trade Republic (Saldo)','PPR','Ações Accenture','DEGIRO','XTB','Trust Wallet','CGD Pensões'];
+
+  const assets = last.assets || {};
+
+  // Pie charts
+  function makePie(canvasId, person) {
+    const labels = [];
+    const vals = [];
+    const colors = [];
+    ASSET_KEYS.forEach(k => {
+      const v = assets[k]?.[person];
+      if (v && v > 0) {
+        labels.push(k.replace('Trade Republic','TR').replace('Certificados de Aforro','Cert. Aforro').replace('Ações Accenture','Accenture'));
+        vals.push(v);
+        colors.push(ASSET_COLORS[k] || '#888');
+      }
+    });
+    makeChart(canvasId, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 2, borderColor: '#1a1d27' }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#8b90b0', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+          tooltip: { callbacks: { label: c => ' ' + c.label + ': ' + fmt(c.raw) } }
+        }
+      }
+    });
+  }
+  makePie('chart-pie-ines', 'ines');
+  makePie('chart-pie-dany', 'dany');
+
+  // Bar chart
+  const bLabels = [], bInes = [], bDany = [], bColors = [];
+  ASSET_KEYS.forEach(k => {
+    const vi = assets[k]?.ines || 0;
+    const vd = assets[k]?.dany || 0;
+    if (vi + vd > 0) {
+      bLabels.push(k.replace('Trade Republic','TR').replace('Certificados de Aforro','Cert. Aforro').replace('Ações Accenture','Accenture'));
+      bInes.push(vi);
+      bDany.push(vd);
+    }
+  });
+
+  makeChart('chart-assets-bar', {
+    type: 'bar',
+    data: {
+      labels: bLabels,
+      datasets: [
+        { label: 'Inês', data: bInes, backgroundColor: 'rgba(255,101,132,0.8)', borderRadius: 4 },
+        { label: 'Dany', data: bDany, backgroundColor: 'rgba(108,99,255,0.8)', borderRadius: 4 }
+      ]
+    },
+    options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { mode: 'index', callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmt(c.raw) } } } }
+  });
+
+  // Table
+  const tbody = document.getElementById('asset-table-body');
+  tbody.innerHTML = '';
+  let totalI = 0, totalD = 0;
+  ASSET_KEYS.forEach(k => {
+    const vi = assets[k]?.ines || 0;
+    const vd = assets[k]?.dany || 0;
+    if (vi + vd === 0) return;
+    totalI += vi; totalD += vd;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="asset-cat" style="background:${ASSET_COLORS[k]||'#888'}"></span>${k}</td>
+      <td style="text-align:right">${vi ? fmt(vi) : '—'}</td>
+      <td style="text-align:right">${vd ? fmt(vd) : '—'}</td>
+      <td style="text-align:right;font-weight:600">${fmt(vi+vd)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  // Total row
+  const tr = document.createElement('tr');
+  tr.style.fontWeight = '700';
+  tr.style.borderTop = '2px solid var(--border)';
+  tr.innerHTML = `<td>Total</td><td style="text-align:right;color:var(--ines)">${fmt(totalI)}</td><td style="text-align:right;color:var(--dany)">${fmt(totalD)}</td><td style="text-align:right">${fmt(totalI+totalD)}</td>`;
+  tbody.appendChild(tr);
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+let activeTab = 'dashboard';
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+  activeTab = tab;
+  if (tab === 'evolucao') initEvolucao();
+  if (tab === 'ativos') initAtivos();
+}
+
+// ============================================================
+// SAVE ENTRY
+// ============================================================
+function saveEntry() {
+  const date = document.getElementById('f-date').value;
+  if (!date) { alert('Por favor seleciona um mês.'); return; }
+
+  const v = id => { const val = parseFloat(document.getElementById(id).value); return isNaN(val) ? null : val; };
+
+  const entry = {
+    date: date,
+    assets: {
+      'Conta à Ordem': { ines: v('f-ordem-ines'), dany: v('f-ordem-dany') },
+      'Conta Poupança': { ines: v('f-poupanca-ines'), dany: v('f-poupanca-dany') },
+      'Conta Conjunta': { ines: v('f-conjunta-ines'), dany: null },
+      'Certificados de Aforro': { ines: v('f-cert-ines'), dany: v('f-cert-dany') },
+      'Trade Republic (Carteira)': { ines: v('f-tr-cart-ines'), dany: v('f-tr-cart-dany') },
+      'Trade Republic (Saldo)': { ines: v('f-tr-saldo-ines'), dany: v('f-tr-saldo-dany') },
+      'PPR': { ines: v('f-ppr-ines'), dany: v('f-ppr-dany') },
+      'Ações Accenture': { ines: v('f-acc-ines'), dany: v('f-acc-dany') },
+      'DEGIRO': { ines: null, dany: v('f-degiro-dany') },
+      'XTB': { ines: null, dany: v('f-xtb-dany') },
+      'Trust Wallet': { ines: null, dany: v('f-trust-dany') },
+      'CGD Pensões': { ines: v('f-cgd-ines'), dany: null }
+    },
+    summary: {}
+  };
+
+  // Compute summaries
+  const a = entry.assets;
+  const inesTotal = ['Conta à Ordem','Conta Poupança','Conta Conjunta','Certificados de Aforro',
+    'Trade Republic (Carteira)','Trade Republic (Saldo)','PPR','Ações Accenture','CGD Pensões']
+    .reduce((s,k) => s + (a[k]?.ines || 0), 0);
+  const danyTotal = ['Conta à Ordem','Conta Poupança','Certificados de Aforro',
+    'Trade Republic (Carteira)','Trade Republic (Saldo)','PPR','Ações Accenture','DEGIRO','XTB','Trust Wallet']
+    .reduce((s,k) => s + (a[k]?.dany || 0), 0);
+  const casaInes = (a['Conta à Ordem']?.ines||0)+(a['Conta Poupança']?.ines||0)+(a['Conta Conjunta']?.ines||0)+(a['Certificados de Aforro']?.ines||0);
+  const casaDany = (a['Conta à Ordem']?.dany||0)+(a['Conta Poupança']?.dany||0)+(a['Certificados de Aforro']?.dany||0);
+
+  entry.summary = {
+    'Total juntos': { ines: inesTotal + danyTotal, dany: null },
+    'Total Individual': { ines: inesTotal, dany: danyTotal },
+    'Dinheiro total possivel casa': { ines: casaInes + casaDany, dany: null },
+    'Dinheiro possivel casa individual': { ines: casaInes, dany: casaDany }
+  };
+
+  // Remove existing entry for same month and add new
+  userEntries = userEntries.filter(e => e.date !== date);
+  userEntries.push(entry);
+  localStorage.setItem('user_entries', JSON.stringify(userEntries));
+
+  document.getElementById('save-success').style.display = 'block';
+  setTimeout(() => document.getElementById('save-success').style.display = 'none', 3000);
+
+  // Refresh dashboard
+  initDashboard();
+}
+
+// ============================================================
+// GOAL MODAL
+// ============================================================
+function openGoalModal() {
+  document.getElementById('goal-input').value = goal;
+  document.getElementById('goal-modal').classList.add('open');
+}
+function closeGoalModal() {
+  document.getElementById('goal-modal').classList.remove('open');
+}
+function saveGoal() {
+  const v = parseFloat(document.getElementById('goal-input').value);
+  if (!isNaN(v) && v > 0) {
+    goal = v;
+    localStorage.setItem('house_goal', v);
+    closeGoalModal();
+    initDashboard();
+    if (activeTab === 'evolucao') initEvolucao();
+  }
+}
+
+// Set default date for form
+const now = new Date();
+document.getElementById('f-date').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+
+// Init
+initDashboard();
+</script>
+</body>
+</html>
