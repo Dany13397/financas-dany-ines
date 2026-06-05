@@ -724,13 +724,16 @@ const CACHE_ENTRIES = 'cache_entries';
 const CACHE_CONFIG  = 'cache_config';
 
 async function fetchData() {
+  console.log('[fetchData] start');
   const cached = sessionStorage.getItem(CACHE_ENTRIES);
   if (cached) {
     allData = JSON.parse(cached);
     refreshEntriesInBackground();
+    console.log('[fetchData] done (cache)');
     return;
   }
   await fetchEntriesFromDB();
+  console.log('[fetchData] done (DB)');
 }
 
 async function fetchEntriesFromDB() {
@@ -1065,9 +1068,11 @@ let weddingConfig = {
 };
 
 async function loadWeddingConfig() {
+  console.log('[wedding] start');
   const cached = sessionStorage.getItem(CACHE_WEDDING);
-  if (cached) { weddingConfig = JSON.parse(cached); refreshWeddingInBackground(); return; }
+  if (cached) { weddingConfig = JSON.parse(cached); refreshWeddingInBackground(); console.log('[wedding] done (cache)'); return; }
   await fetchWeddingFromDB();
+  console.log('[wedding] done (DB)');
 }
 
 async function fetchWeddingFromDB() {
@@ -1182,13 +1187,11 @@ function renderWeddingTab() {
 let casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
 
 async function loadCasaConfig() {
+  console.log('[casa] start');
   const cached = sessionStorage.getItem(CACHE_CONFIG);
-  if (cached) {
-    casaConfig = JSON.parse(cached);
-    refreshConfigInBackground();
-    return;
-  }
+  if (cached) { casaConfig = JSON.parse(cached); refreshConfigInBackground(); console.log('[casa] done (cache)'); return; }
   await fetchConfigFromDB();
+  console.log('[casa] done (DB)');
 }
 
 async function fetchConfigFromDB() {
