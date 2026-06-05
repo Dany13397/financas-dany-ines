@@ -643,7 +643,9 @@ function boot() {
 
 async function loadApp(session) {
   show('loading');
+  console.log('[1] loadApp start');
   await Promise.all([loadCasaConfig(), loadWeddingConfig(), fetchData()]);
+  console.log('[2] data loaded');
 
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
