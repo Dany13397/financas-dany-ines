@@ -574,9 +574,7 @@ async function boot() {
 async function loadApp(session) {
   show('loading');
   // Load goal from localStorage (per-user key)
-  const uid = session.user.id;
-  window._uid = uid;
-  loadCasaConfig(uid);
+  await loadCasaConfig();
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
   document.getElementById('goal-display').textContent = fmtShort(goal);
@@ -943,32 +941,33 @@ function initPerson(p) {
 // ── Casa ─────────────────────────────────────────────────────
 let casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
 
-function loadCasaConfig(uid) {
-  const saved = localStorage.getItem('casa_' + uid);
-  if (saved) {
-    casaConfig = JSON.parse(saved);
+async function loadCasaConfig() {
+  const { data } = await sb.from('config').select('value').eq('key', 'casa').single();
+  if (data?.value) {
+    casaConfig = data.value;
     if (casaConfig.pago === 2000) { casaConfig.pago = 52000; casaConfig.goal = 80000; }
     if (!casaConfig.credito) casaConfig.credito = 180000;
+    if (!casaConfig.extras) casaConfig.extras = [];
   } else {
     casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
   }
   goal = casaConfig.goal;
 }
 
-function saveCasaConfig(uid) {
-  localStorage.setItem('casa_' + uid, JSON.stringify(casaConfig));
+async function saveCasaConfig() {
+  await sb.from('config').upsert({ key: 'casa', value: casaConfig }, { onConflict: 'key' });
 }
 
-function saveCasaDetails() {
+async function saveCasaDetails() {
   const preco   = parseFloat(document.getElementById('casa-f-preco').value)   || casaConfig.preco;
   const credito = parseFloat(document.getElementById('casa-f-credito').value) || casaConfig.credito;
   const pago    = parseFloat(document.getElementById('casa-f-pago').value)    || casaConfig.pago;
   casaConfig.preco   = preco;
   casaConfig.credito = credito;
   casaConfig.pago    = pago;
-  casaConfig.goal    = preco - credito; // objetivo = total que pagam vocês
+  casaConfig.goal    = preco - credito;
   goal = casaConfig.goal;
-  saveCasaConfigCurrent();
+  await saveCasaConfig();
   renderCasaTab();
   initDashboard();
   const ok = document.getElementById('casa-details-ok');
@@ -976,26 +975,21 @@ function saveCasaDetails() {
   setTimeout(() => ok.style.display = 'none', 2500);
 }
 
-function addExtra() {
+async function addExtra() {
   const nome  = document.getElementById('extra-nome').value.trim();
   const custo = parseFloat(document.getElementById('extra-custo').value);
   if (!nome || isNaN(custo) || custo <= 0) return;
   casaConfig.extras.push({ nome, custo });
   document.getElementById('extra-nome').value  = '';
   document.getElementById('extra-custo').value = '';
-  saveCasaConfigCurrent();
+  await saveCasaConfig();
   renderCasaTab();
 }
 
-function removeExtra(i) {
+async function removeExtra(i) {
   casaConfig.extras.splice(i, 1);
-  saveCasaConfigCurrent();
+  await saveCasaConfig();
   renderCasaTab();
-}
-
-function saveCasaConfigCurrent() {
-  // Usa uid guardado em memória
-  if (window._uid) saveCasaConfig(window._uid);
 }
 
 function renderCasaTab() {
