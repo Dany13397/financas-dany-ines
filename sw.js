@@ -1,10 +1,6 @@
-const CACHE = 'financas-v3';
-const ASSETS = ['/', '/index.html'];
+const CACHE = 'financas-v4';
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
-});
+self.addEventListener('install', e => { self.skipWaiting(); });
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys =>
@@ -14,20 +10,30 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Ignora esquemas não suportados (chrome-extension, etc.)
   if (!e.request.url.startsWith('http')) return;
-  // Network first para Supabase
-  if (e.request.url.includes('supabase.co')) {
+
+  const url = e.request.url;
+
+  // HTML principal — sempre da rede (para apanhar atualizações)
+  if (url.includes('financas-dany-ines.vercel.app') && !url.match(/\.(js|css|png|svg|ico|json|woff)$/)) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-  } else {
-    e.respondWith(
-      caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return res;
-      }))
-    );
+    return;
   }
+
+  // Supabase — sempre da rede
+  if (url.includes('supabase.co')) {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    return;
+  }
+
+  // CDN externos (Chart.js, Supabase JS, html2canvas) — cache first
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+      if (res.ok) {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+      }
+      return res;
+    }))
+  );
 });
