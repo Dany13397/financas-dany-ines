@@ -687,10 +687,44 @@ const dtLabel = d => {
 };
 
 // ── Boot ─────────────────────────────────────────────────────
+const CACHE_SESSION = 'cache_session';
+
 function boot() {
-  show('loading');
   // Acorda a BD em segundo plano
   sb.from('entries').select('count', { count: 'exact', head: true }).then(() => {}).catch(() => {});
+
+  // Se temos cache completo, mostra a app instantaneamente
+  const hint    = sessionStorage.getItem(CACHE_SESSION);
+  const entries = sessionStorage.getItem(CACHE_ENTRIES);
+  const config  = sessionStorage.getItem(CACHE_CONFIG);
+  const wedding = sessionStorage.getItem(CACHE_WEDDING);
+
+  if (hint && entries && config && wedding) {
+    const { email, name } = JSON.parse(hint);
+    allData       = JSON.parse(entries);
+    casaConfig    = JSON.parse(config);
+    weddingConfig = JSON.parse(wedding);
+    goal = casaConfig.goal;
+    document.getElementById('goal-input').value = goal;
+    document.getElementById('goal-display').textContent = fmtShort(goal);
+    document.getElementById('user-badge').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('user-badge').title = email + ' — Clica para sair';
+    show('app');
+    initDashboard();
+    checkMigration();
+    _appLoaded = true;
+    // Refresh tudo em segundo plano
+    refreshEntriesInBackground();
+    refreshConfigInBackground();
+    refreshWeddingInBackground();
+    // Verifica sessão em segundo plano
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { sessionStorage.removeItem(CACHE_SESSION); _appLoaded = false; show('auth'); }
+    }).catch(() => {});
+    return;
+  }
+
+  show('loading');
 }
 
 async function loadApp(session) {
@@ -702,9 +736,10 @@ async function loadApp(session) {
   document.getElementById('goal-display').textContent = fmtShort(goal);
 
   const email = session.user.email || '';
-  const name = email.split('@')[0];
+  const name  = email.split('@')[0];
   document.getElementById('user-badge').textContent = name.charAt(0).toUpperCase();
   document.getElementById('user-badge').title = email + ' — Clica para sair';
+  sessionStorage.setItem(CACHE_SESSION, JSON.stringify({ email, name }));
 
   show('app');
   initDashboard();
@@ -738,6 +773,8 @@ document.getElementById('login-pass').addEventListener('keydown', e => { if(e.ke
 function doLogout() { document.getElementById('logout-modal').classList.add('open'); }
 async function confirmLogout() {
   await sb.auth.signOut();
+  sessionStorage.clear();
+  _appLoaded = false;
   document.getElementById('logout-modal').classList.remove('open');
   allData = [];
   show('auth');
