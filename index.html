@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>💰 Finanças — Dany & Inês</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#6c63ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Finanças">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%236c63ff'/><text y='125' x='90' text-anchor='middle' font-size='100'>💰</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
@@ -506,7 +512,6 @@
         <div style="display:flex;gap:8px;margin-bottom:16px">
           <button id="gv-btn-cat"  onclick="switchGuestView('cat')"  class="btn btn-sm" style="flex:1">📂 Por Categoria</button>
           <button id="gv-btn-all"  onclick="switchGuestView('all')"  class="btn btn-sm btn-outline" style="flex:1">📋 Lista Completa</button>
-          <button onclick="exportGuestsCSV()" class="btn btn-sm btn-outline" style="flex:1">📥 Exportar Excel</button>
         </div>
         <!-- Por categoria -->
         <div id="gv-cat"><div id="guests-sections"></div></div>
@@ -544,6 +549,7 @@
         <div style="display:flex;gap:8px;margin-bottom:20px">
           <button class="btn btn-sm" onclick="addTable()" style="margin-top:0">➕ Adicionar Mesa</button>
           <button class="btn btn-sm btn-outline" onclick="autoAssignTables()" style="margin-top:0">🔀 Distribuir Automaticamente</button>
+          <button class="btn btn-sm btn-outline" onclick="exportMesasPDF()" style="margin-top:0">📄 Exportar PDF</button>
         </div>
         <!-- Sem mesa -->
         <div class="chart-card" style="margin-bottom:16px">
@@ -2268,6 +2274,82 @@ function exportPDF() {
 // ── Init form date ────────────────────────────────────────────
 const now = new Date();
 document.getElementById('f-date').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+
+// ── Exportar Mesas PDF ────────────────────────────────────────
+function exportMesasPDF() {
+  const tables = getOrInitTables();
+  const hoje   = new Date().toLocaleDateString('pt-PT');
+
+  const tableRows = tables.map(t => {
+    const isNoivos = t.id === 'noivos';
+    const pag = t.guests.reduce((s,g)=>s+calcPagantes(g.cat,g.tipo||'adulto'),0);
+    const guestList = t.guests.length
+      ? t.guests.map(g => {
+          const cat = WEDDING_GUEST_CATS.find(c=>c.key===g.cat)?.label||g.cat;
+          const tipo = {adulto:'Adulto',crianca:'Criança',bebe:'Bebé'}[g.tipo||'adulto'];
+          return `<tr><td>${g.nome}</td><td style="color:#666">${cat}</td><td style="color:#666">${tipo}</td></tr>`;
+        }).join('')
+      : '<tr><td colspan="3" style="color:#aaa;font-style:italic">Mesa vazia</td></tr>';
+
+    return `
+      <div style="break-inside:avoid;margin-bottom:20px;border:1px solid #ddd;border-radius:8px;padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:2px solid #${isNoivos?'6c63ff':'333'};padding-bottom:8px">
+          <h3 style="margin:0;color:#${isNoivos?'6c63ff':'000'}">${isNoivos?'💍 ':' '}${t.nome}</h3>
+          <span style="font-size:12px;color:#666">${t.guests.length} convidados${!isNoivos?' · '+pag+(pag%1===0?'':'.0')+' pagantes':''}</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="background:#f5f5f5"><th style="text-align:left;padding:5px 8px">Nome</th><th style="text-align:left;padding:5px 8px">Categoria</th><th style="text-align:left;padding:5px 8px">Tipo</th></tr></thead>
+          <tbody>${guestList}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+
+  const totalGuests  = tables.reduce((s,t)=>s+t.guests.length,0);
+  const totalPag     = tables.reduce((s,t)=>s+t.guests.reduce((ss,g)=>ss+calcPagantes(g.cat,g.tipo||'adulto'),0),0);
+  const allGuests    = getAllGuests();
+  const unassigned   = allGuests.filter(g=>!getAssignedKeys().has(g.cat+'|'+g.nome));
+
+  const printWin = window.open('','_blank');
+  printWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Plano de Mesas — Casamento Dany & Inês</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#000;padding:20px;max-width:900px;margin:0 auto;font-size:13px}
+    h1{font-size:22px;margin-bottom:4px;color:#6c63ff}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px}
+    table td,table th{padding:5px 8px;border-bottom:1px solid #eee}
+    .summary{background:#f9f9f9;border:1px solid #ddd;border-radius:8px;padding:12px;margin:12px 0;display:flex;gap:24px}
+    .summary div{text-align:center}
+    .summary .val{font-size:20px;font-weight:700;color:#6c63ff}
+    .summary .lbl{font-size:11px;color:#666}
+    @media print{@page{margin:10mm}body{padding:0}}
+  </style></head><body>
+  <h1>🪑 Plano de Mesas</h1>
+  <p style="color:#666">Casamento Dany & Inês · 16 de Julho de 2027 · Gerado em ${hoje}</p>
+  <div class="summary">
+    <div><div class="val">${tables.length}</div><div class="lbl">Mesas</div></div>
+    <div><div class="val">${totalGuests}</div><div class="lbl">Colocados</div></div>
+    <div><div class="val">${totalPag%1===0?totalPag:totalPag.toFixed(1)}</div><div class="lbl">Pagantes</div></div>
+    <div><div class="val" style="color:${unassigned.length?'#c62828':'#1a7c3e'}">${unassigned.length}</div><div class="lbl">Sem Mesa</div></div>
+  </div>
+  <div class="grid">${tableRows}</div>
+  ${unassigned.length?`
+  <div style="margin-top:20px;break-inside:avoid">
+    <h3>⚠️ Sem Mesa (${unassigned.length})</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      ${unassigned.map(g=>`<tr><td style="padding:4px 8px;border-bottom:1px solid #eee">${g.nome}</td><td style="padding:4px 8px;color:#666;border-bottom:1px solid #eee">${g.catLabel}</td></tr>`).join('')}
+    </table>
+  </div>`:''}
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  printWin.document.close();
+}
+
+// ── PWA ───────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 
 // ── Start ─────────────────────────────────────────────────────
 boot();
