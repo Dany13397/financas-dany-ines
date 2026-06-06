@@ -2109,12 +2109,13 @@ function initSavingsRate() {
   for (let i = 1; i < casaVals.length; i++) deltas.push(casaVals[i] - casaVals[i-1]);
   const avgMonth = deltas.length ? deltas.reduce((s,v)=>s+v,0)/deltas.length : 0;
 
-  // Objetivo = 28.000€ (escritura) + custo líquido do casamento
+  // Objetivo = 28.000€ (escritura) + casamento líquido + extras casa
   const naEscritura  = (casaConfig.preco - casaConfig.credito) - casaConfig.pago; // 28.000€
   const weddingCusto = weddingConfig.items.reduce((s,i)=>s+(i.custo||0),0);
   const weddingGifts = (weddingConfig.gifts||[]).reduce((s,g)=>s+(g.valor||0),0);
   const weddingNet   = Math.max(0, weddingCusto - weddingGifts);
-  const totalObjetivo = naEscritura + weddingNet;
+  const extrasTotal  = casaConfig.extras.reduce((s,e)=>s+e.custo,0);
+  const totalObjetivo = naEscritura + weddingNet + extrasTotal;
 
   const atual = casaVals[casaVals.length-1];
   const falta = Math.max(0, totalObjetivo - atual);
@@ -2139,8 +2140,9 @@ function initSavingsRate() {
 
   // Breakdown sempre visível
   const breakdown = `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text2)">
-    📊 Objetivo: <strong style="color:var(--text)">${fmt(naEscritura)}</strong> escritura
+    📊 <strong style="color:var(--text)">${fmt(naEscritura)}</strong> escritura
     + <strong style="color:var(--text)">${fmt(weddingNet)}</strong> casamento
+    + <strong style="color:var(--text)">${fmt(extrasTotal)}</strong> extras casa
     = <strong style="color:var(--accent)">${fmt(totalObjetivo)}</strong> total
     · Tens <strong style="color:var(--green)">${fmt(atual)}</strong> · Faltam <strong>${fmt(falta)}</strong>
   </div>`;
