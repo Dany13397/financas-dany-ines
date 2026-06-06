@@ -859,26 +859,48 @@ function boot() {
   show('loading');
 }
 
+function showLoadingMsg(msg) {
+  const el = document.getElementById('loading-msg');
+  if (el) el.textContent = msg;
+}
+
 async function loadApp(session) {
-  console.log('[loadApp] start', session?.user?.email);
   show('loading');
-  console.log('[loadApp] fetching data...');
-  await Promise.all([loadCasaConfig(), loadWeddingConfig(), fetchData()]);
-  console.log('[loadApp] data ready');
+  showLoadingMsg('A carregar dados...');
+
+  const email = session.user.email || '';
+  const name  = email.split('@')[0];
+  cacheSet(CACHE_SESSION, { email, name });
+
+  // Timeout de 15s: mostra a app mesmo que o Supabase não responda
+  const fetchPromise = Promise.all([loadCasaConfig(), loadWeddingConfig(), fetchData()]);
+  const timeout = new Promise(resolve => {
+    setTimeout(() => { showLoadingMsg('A acordar a base de dados...'); resolve(); }, 5000);
+  });
+  const hardTimeout = new Promise(resolve => setTimeout(resolve, 15000));
+
+  await Promise.race([fetchPromise, hardTimeout]);
 
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
   document.getElementById('goal-display').textContent = fmtShort(goal);
-
-  const email = session.user.email || '';
-  const name  = email.split('@')[0];
   document.getElementById('user-badge').textContent = name.charAt(0).toUpperCase();
   document.getElementById('user-badge').title = email + ' — Clica para sair';
-  cacheSet(CACHE_SESSION, { email, name });
 
   show('app');
   initDashboard();
   checkMigration();
+
+  // Se os dados não chegaram ainda, continua a tentar em segundo plano
+  fetchPromise.then(() => {
+    initDashboard();
+    if (activeTab === 'evolucao') initEvolucao();
+    if (activeTab === 'ativos')   initAtivos();
+    if (activeTab === 'ines')     initPerson('ines');
+    if (activeTab === 'dany')     initPerson('dany');
+    if (activeTab === 'casa')     renderCasaTab();
+    if (activeTab === 'casamento') renderWeddingTab();
+  }).catch(() => {});
 }
 
 // ── Auth ─────────────────────────────────────────────────────
