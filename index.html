@@ -1107,15 +1107,11 @@ function initDashboard() {
   document.getElementById('person-ines-casa').textContent  = fmt(casaI);
   document.getElementById('person-dany-casa').textContent  = fmt(casaD);
 
-  // Líquido vs Investido por pessoa
-  const assets = last.assets || {};
-  const LIQUIDO_KEYS   = ['Conta à Ordem', 'Conta Poupança', 'Conta Conjunta', 'Certificados de Aforro'];
-  const INVESTIDO_KEYS = ['Trade Republic (Carteira)', 'Trade Republic (Saldo)', 'PPR', 'Ações Accenture', 'DEGIRO', 'XTB', 'Trust Wallet', 'CGD Pensões'];
-
-  const liquidoInes   = LIQUIDO_KEYS.reduce((s,k)=>   s+(assets[k]?.ines||0), 0);
-  const liquidoDany   = LIQUIDO_KEYS.reduce((s,k)=>   s+(assets[k]?.dany||0), 0);
-  const investidoInes = INVESTIDO_KEYS.reduce((s,k)=> s+(assets[k]?.ines||0), 0);
-  const investidoDany = INVESTIDO_KEYS.reduce((s,k)=> s+(assets[k]?.dany||0), 0);
+  // Líquido = dinheiro para casa individual | Investido = restante
+  const liquidoInes   = casaI;
+  const liquidoDany   = casaD;
+  const investidoInes = Math.max(0, ines - casaI);
+  const investidoDany = Math.max(0, dany - casaD);
 
   document.getElementById('dash-ines-liquido').textContent   = fmt(liquidoInes);
   document.getElementById('dash-dany-liquido').textContent   = fmt(liquidoDany);
