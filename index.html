@@ -1422,15 +1422,9 @@ function renderMesasTab() {
 
   // Sem mesa
   const unEl = document.getElementById('mt-unassigned');
-  const emptyEl = document.getElementById('mt-unassigned-empty');
-  if (unassigned.length) {
-    emptyEl.style.display = 'none';
-    unEl.innerHTML = unassigned.map(g => guestChip(g,'__unassigned__')).join('');
-  } else {
-    emptyEl.style.display = 'block';
-    unEl.innerHTML = '';
-    unEl.appendChild(emptyEl);
-  }
+  unEl.innerHTML = unassigned.length
+    ? unassigned.map(g => guestChip(g,'__unassigned__')).join('')
+    : '<span style="font-size:12px;color:var(--text2);align-self:center">Todos os convidados estão numa mesa. ✅</span>';
 
   // Mesas
   const grid = document.getElementById('mt-tables-grid');
