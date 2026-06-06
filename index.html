@@ -655,10 +655,8 @@
 
       <!-- Resumo -->
       <div class="chart-card">
-        <div style="font-size:14px;font-weight:600;margin-bottom:16px">📋 Resumo de Custos</div>
-        <table class="asset-table">
-          <tbody id="casa-resumo-body"></tbody>
-        </table>
+        <div style="font-size:14px;font-weight:600;margin-bottom:20px">📋 Resumo de Custos</div>
+        <div id="casa-resumo-body"></div>
       </div>
 
     </div>
@@ -2038,7 +2036,7 @@ function renderCasaTab() {
   }
 
   // Resumo
-  const tbody = document.getElementById('casa-resumo-body');
+  const resumoEl      = document.getElementById('casa-resumo-body');
   const totalVosso    = casaConfig.preco - casaConfig.credito;
   const naEscritura   = totalVosso - casaConfig.pago;
   const weddingCusto  = weddingConfig.items.reduce((s, i) => s + (i.custo || 0), 0);
@@ -2047,24 +2045,52 @@ function renderCasaTab() {
   const poupancaAtual = allData.length ? (allData[allData.length-1].summary?.['Dinheiro total possivel casa']?.ines || 0) : 0;
   const totalNecessario = naEscritura + extrasTotal + weddingTotal;
   const aindaFalta    = Math.max(0, totalNecessario - poupancaAtual);
-  const rows = [
-    ['Preço total da casa',              fmt(casaConfig.preco),    ''],
-    ['Crédito bancário',                 '− ' + fmt(casaConfig.credito), 'color:var(--text2)'],
-    ['Total a pagar por vocês',          fmt(totalVosso),          'font-weight:700'],
-    ['',                                 '',                       ''],
-    ['Já pago (sinal/entrada)',          '− ' + fmt(casaConfig.pago), 'color:var(--green)'],
-    ['A levar na escritura',             fmt(naEscritura),         'font-weight:700;color:var(--accent)'],
-    ['',                                 '',                       ''],
-    ['💒 Casamento',                     fmt(weddingTotal),        'color:var(--ines)'],
-    ['🛋️ Extras / obras casa',          fmt(extrasTotal),         'color:var(--yellow)'],
-    ['Total necessário',                 fmt(totalNecessario),     'font-weight:700'],
-    ['',                                 '',                       ''],
-    ['Poupança atual (para casa)',        fmt(poupancaAtual),       'color:var(--green)'],
-    ['Ainda falta',                      fmt(aindaFalta),          'font-weight:700;color:' + (aindaFalta <= 0 ? 'var(--green)' : 'var(--red)')],
-  ];
-  tbody.innerHTML = rows.map(([l, v, s]) =>
-    `<tr><td style="color:var(--text2);font-size:13px">${l}</td><td style="text-align:right;font-size:13px;${s}">${v}</td></tr>`
-  ).join('');
+  const pct           = totalNecessario > 0 ? Math.min(100, Math.round(poupancaAtual / totalNecessario * 100)) : 0;
+
+  const row = (icon, label, value, color='var(--text)', sub='') =>
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div><span style="color:var(--text2);font-size:13px">${icon} ${label}</span>${sub?`<div style="font-size:11px;color:var(--text2);margin-top:2px">${sub}</div>`:''}</div>
+      <span style="font-size:14px;font-weight:600;color:${color}">${value}</span>
+    </div>`;
+
+  resumoEl.innerHTML = `
+    <!-- CASA -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:8px">🏠 A Casa</div>
+    ${row('','Preço total', fmt(casaConfig.preco))}
+    ${row('','Crédito bancário', '− '+fmt(casaConfig.credito), 'var(--text2)', 'financiado pelo banco')}
+    ${row('','Já pago (sinal)', '− '+fmt(casaConfig.pago), 'var(--green)', 'entrada já entregue')}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--border)">
+      <span style="font-size:13px;font-weight:700">A levar na escritura</span>
+      <span style="font-size:18px;font-weight:800;color:var(--accent)">${fmt(naEscritura)}</span>
+    </div>
+
+    <!-- OUTROS GASTOS -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-top:20px;margin-bottom:8px">💸 Outros Gastos</div>
+    ${row('💒','Casamento', fmt(weddingTotal), 'var(--ines)', weddingGifts>0?`custos ${fmt(weddingCusto)} − prendas ${fmt(weddingGifts)}`:'custo estimado')}
+    ${extrasTotal>0?row('🛋️','Extras / obras casa', fmt(extrasTotal), 'var(--yellow)'):''}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--border)">
+      <span style="font-size:13px;font-weight:700">Total necessário</span>
+      <span style="font-size:18px;font-weight:800">${fmt(totalNecessario)}</span>
+    </div>
+
+    <!-- PROGRESSO -->
+    <div style="margin-top:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:700">Progresso</span>
+        <span style="font-size:20px;font-weight:800;color:${aindaFalta<=0?'var(--green)':'var(--accent)'}">${pct}%</span>
+      </div>
+      <div style="background:var(--surface2);border-radius:99px;height:12px;overflow:hidden;margin-bottom:8px">
+        <div style="width:${pct}%;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),${aindaFalta<=0?'var(--green)':'#8b5cf6'});transition:width 1s ease"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:16px">
+        <span>Poupanças atuais: <strong style="color:var(--green)">${fmt(poupancaAtual)}</strong></span>
+        <span>Objetivo: <strong style="color:var(--text)">${fmt(totalNecessario)}</strong></span>
+      </div>
+      <div style="background:${aindaFalta<=0?'rgba(67,214,138,.12)':'rgba(239,83,80,.1)'};border:1px solid ${aindaFalta<=0?'rgba(67,214,138,.3)':'rgba(239,83,80,.3)'};border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">${aindaFalta<=0?'🎉 Objetivo atingido!':'Ainda falta'}</div>
+        <div style="font-size:24px;font-weight:800;color:${aindaFalta<=0?'var(--green)':'var(--red)'}">${aindaFalta<=0?'Parabéns!':fmt(aindaFalta)}</div>
+      </div>
+    </div>`;
 }
 
 // ── Navigation ────────────────────────────────────────────────
