@@ -873,10 +873,12 @@ async function loadApp(session) {
   cacheSet(CACHE_SESSION, { email, name });
 
   // Timeout de 15s: mostra a app mesmo que o Supabase não responda
-  const fetchPromise = Promise.all([loadCasaConfig(), loadWeddingConfig(), fetchData()]);
-  const timeout = new Promise(resolve => {
-    setTimeout(() => { showLoadingMsg('A acordar a base de dados...'); resolve(); }, 5000);
-  });
+  const fetchPromise = Promise.all([
+    loadCasaConfig().catch(e => console.warn('casaConfig err:', e)),
+    loadWeddingConfig().catch(e => console.warn('weddingConfig err:', e)),
+    fetchData().catch(e => console.warn('fetchData err:', e))
+  ]);
+  setTimeout(() => showLoadingMsg('A acordar a base de dados...'), 5000);
   const hardTimeout = new Promise(resolve => setTimeout(resolve, 15000));
 
   await Promise.race([fetchPromise, hardTimeout]);
