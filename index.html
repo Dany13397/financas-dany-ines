@@ -291,11 +291,31 @@
           <div class="person-name"><div class="dot dot-ines"></div>Inês</div>
           <div class="person-total ines" id="person-ines-total">—</div>
           <div class="person-casa">Para casa: <strong id="person-ines-casa">—</strong></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+            <div>
+              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:3px">💧 Líquido</div>
+              <div style="font-size:14px;font-weight:700;color:var(--green)" id="dash-ines-liquido">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:3px">📈 Investido</div>
+              <div style="font-size:14px;font-weight:700;color:var(--yellow)" id="dash-ines-investido">—</div>
+            </div>
+          </div>
         </div>
         <div class="person-card">
           <div class="person-name"><div class="dot dot-dany"></div>Dany</div>
           <div class="person-total dany" id="person-dany-total">—</div>
           <div class="person-casa">Para casa: <strong id="person-dany-casa">—</strong></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+            <div>
+              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:3px">💧 Líquido</div>
+              <div style="font-size:14px;font-weight:700;color:var(--green)" id="dash-dany-liquido">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:3px">📈 Investido</div>
+              <div style="font-size:14px;font-weight:700;color:var(--yellow)" id="dash-dany-investido">—</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1086,6 +1106,21 @@ function initDashboard() {
   document.getElementById('person-dany-total').textContent = fmt(dany);
   document.getElementById('person-ines-casa').textContent  = fmt(casaI);
   document.getElementById('person-dany-casa').textContent  = fmt(casaD);
+
+  // Líquido vs Investido por pessoa
+  const assets = last.assets || {};
+  const LIQUIDO_KEYS   = ['Conta à Ordem', 'Conta Poupança', 'Conta Conjunta', 'Certificados de Aforro'];
+  const INVESTIDO_KEYS = ['Trade Republic (Carteira)', 'Trade Republic (Saldo)', 'PPR', 'Ações Accenture', 'DEGIRO', 'XTB', 'Trust Wallet', 'CGD Pensões'];
+
+  const liquidoInes   = LIQUIDO_KEYS.reduce((s,k)=>   s+(assets[k]?.ines||0), 0);
+  const liquidoDany   = LIQUIDO_KEYS.reduce((s,k)=>   s+(assets[k]?.dany||0), 0);
+  const investidoInes = INVESTIDO_KEYS.reduce((s,k)=> s+(assets[k]?.ines||0), 0);
+  const investidoDany = INVESTIDO_KEYS.reduce((s,k)=> s+(assets[k]?.dany||0), 0);
+
+  document.getElementById('dash-ines-liquido').textContent   = fmt(liquidoInes);
+  document.getElementById('dash-dany-liquido').textContent   = fmt(liquidoDany);
+  document.getElementById('dash-ines-investido').textContent = fmt(investidoInes);
+  document.getElementById('dash-dany-investido').textContent = fmt(investidoDany);
 
   const recent = allData.slice(-12);
   mkChart('chart-dash-total', {
