@@ -1180,7 +1180,16 @@ async function addGuest(cat) {
 async function removeGuest(cat, i) {
   weddingConfig.guests[cat].splice(i, 1);
   await saveWeddingConfig();
-  renderWeddingTab();
+  renderGuestTab();
+}
+
+async function moveGuest(cat, i, dir) {
+  const list = weddingConfig.guests[cat];
+  const j = i + dir;
+  if (j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  await saveWeddingConfig();
+  renderGuestTab();
 }
 
 async function togglePresenca(cat, i) {
@@ -1245,10 +1254,12 @@ function renderGuestTab() {
     const list = guests[c.key] || [];
     const rows = list.length
       ? list.map((p, i) => `
-        <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:6px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
           <span style="font-size:13px">${p.nome}</span>
           ${tipoBadge(p.tipo)}
           <span onclick="togglePresenca('${c.key}',${i})" style="cursor:pointer" title="Clica para mudar">${presencaBadge(p.presenca||'pendente')}</span>
+          <button onclick="moveGuest('${c.key}',${i},-1)" ${i===0?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===0?'.3':'1'}">▲</button>
+          <button onclick="moveGuest('${c.key}',${i},1)"  ${i===list.length-1?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===list.length-1?'.3':'1'}">▼</button>
           <button onclick="removeGuest('${c.key}',${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;line-height:1">✕</button>
         </div>`).join('')
       : '<p style="font-size:12px;color:var(--text2);padding:8px 0">Sem convidados.</p>';
@@ -1367,8 +1378,11 @@ async function updateWeddingItem(i, field, value) {
 }
 
 function renderWeddingTab() {
-  const items = weddingConfig.items;
-  const total = items.reduce((s, i) => s + (i.custo || 0), 0);
+  const items       = weddingConfig.items;
+  const gifts       = weddingConfig.gifts || [];
+  const custoTotal  = items.reduce((s, i) => s + (i.custo || 0), 0);
+  const giftsTotal  = gifts.reduce((s, g) => s + (g.valor || 0), 0);
+  const total       = Math.max(0, custoTotal - giftsTotal);  // custo líquido
   const orcamentado = items.filter(i => i.custo > 0).reduce((s, i) => s + i.custo, 0);
   const porDefinir  = items.filter(i => !i.custo || i.custo === 0).length;
 
@@ -1377,12 +1391,12 @@ function renderWeddingTab() {
   const dias = Math.ceil((WEDDING_DATE - hoje) / (1000*60*60*24));
   document.getElementById('w-dias').textContent = dias > 0 ? dias : '🎉';
   document.getElementById('w-data-label').textContent = '16 de Julho de 2027';
-  document.getElementById('w-total').textContent = fmt(total);
+  document.getElementById('w-total').textContent = fmt(total) + (giftsTotal > 0 ? ` <small style="color:var(--green);font-size:13px;font-weight:400">(−${fmt(giftsTotal)} prendas)</small>` : '');
   document.getElementById('w-orcamentado').textContent = fmt(orcamentado);
-  document.getElementById('w-orcamentado-pct').textContent = total > 0 ? Math.round(orcamentado/total*100)+'% do total' : '';
+  document.getElementById('w-orcamentado-pct').textContent = custoTotal > 0 ? Math.round(orcamentado/custoTotal*100)+'% do total' : '';
   document.getElementById('w-pordefinir').textContent = porDefinir + (porDefinir === 1 ? ' item' : ' itens');
 
-  // Impacto casa
+  // Impacto casa — usa custo líquido
   const poupancaAtual = allData.length ? (allData[allData.length-1].summary?.['Dinheiro total possivel casa']?.ines || 0) : 0;
   const naEscritura   = casaConfig.goal - casaConfig.pago;
   const restaParaCasa = poupancaAtual - total;
@@ -1660,7 +1674,9 @@ function renderCasaTab() {
   const tbody = document.getElementById('casa-resumo-body');
   const totalVosso    = casaConfig.preco - casaConfig.credito;
   const naEscritura   = totalVosso - casaConfig.pago;
-  const weddingTotal  = weddingConfig.items.reduce((s, i) => s + (i.custo || 0), 0);
+  const weddingCusto  = weddingConfig.items.reduce((s, i) => s + (i.custo || 0), 0);
+  const weddingGifts  = (weddingConfig.gifts||[]).reduce((s, g) => s + (g.valor || 0), 0);
+  const weddingTotal  = Math.max(0, weddingCusto - weddingGifts);
   const poupancaAtual = allData.length ? (allData[allData.length-1].summary?.['Dinheiro total possivel casa']?.ines || 0) : 0;
   const totalNecessario = naEscritura + extrasTotal + weddingTotal;
   const aindaFalta    = Math.max(0, totalNecessario - poupancaAtual);
