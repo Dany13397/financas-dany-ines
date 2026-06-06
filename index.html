@@ -1262,11 +1262,13 @@ function renderCasaEvolucaoChart() {
     ? (recent[recent.length-1].val - recent[0].val) / (recent.length - 1)
     : 0;
 
-  const goal80 = casaConfig.goal;
-  const naEscritura = goal80 - casaConfig.pago;
+  const naEscritura  = (casaConfig.preco - casaConfig.credito) - casaConfig.pago;
+  const weddingTotal = weddingConfig.items.reduce((s, i) => s + (i.custo || 0), 0);
+  const extrasTotal2 = casaConfig.extras.reduce((s, e) => s + e.custo, 0);
+  const totalObjetivo = naEscritura + weddingTotal + extrasTotal2;
   const currentVal = hist[hist.length-1].val;
 
-  // Gera projeção até atingir o objetivo (máx 36 meses)
+  // Projeção até atingir o objetivo total
   const projLabels = [], projVals = [];
   const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   let lastDate = allData[allData.length-1].date.replace('b','');
@@ -1280,14 +1282,14 @@ function renderCasaEvolucaoChart() {
     const lbl = months[mo-1] + ' ' + String(yr).slice(2);
     projLabels.push(lbl);
     projVals.push(Math.max(0, Math.round(projVal)));
-    if (!metaMonth && projVal >= naEscritura) { metaMonth = lbl; }
-    if (projVal >= goal80) break;
+    if (!metaMonth && projVal >= totalObjetivo) { metaMonth = lbl; }
+    if (projVal >= totalObjetivo) break;
   }
 
   // Label de previsão
   const projEl = document.getElementById('casa-proj-label');
   if (projEl) {
-    if (currentVal >= naEscritura) {
+    if (currentVal >= totalObjetivo) {
       projEl.textContent = '✅ Objetivo atingido!';
       projEl.style.color = 'var(--green)';
     } else if (metaMonth && avgGrowth > 0) {
@@ -1300,33 +1302,48 @@ function renderCasaEvolucaoChart() {
 
   const histLabels = hist.map(d => d.label);
   const histVals   = hist.map(d => d.val);
-  const goalLine   = [...histLabels, ...projLabels].map(() => naEscritura);
+  // Linhas de referência
+  const allLabels  = [...histLabels, ...projLabels];
+  const goalLine        = allLabels.map(() => totalObjetivo);
+  const escrituraLine   = weddingTotal > 0 ? allLabels.map(() => naEscritura) : null;
+  const weddingLine     = weddingTotal > 0 ? allLabels.map(() => naEscritura + weddingTotal) : null;
+
+  const datasets = [
+    {
+      label: 'Poupanças',
+      data: [...histVals, ...Array(projLabels.length).fill(null)],
+      borderColor: '#43d68a', backgroundColor: 'rgba(67,214,138,.15)',
+      fill: true, tension: .4, pointRadius: 3
+    },
+    {
+      label: 'Projeção',
+      data: [...Array(histLabels.length - 1).fill(null), histVals[histVals.length-1], ...projVals],
+      borderColor: '#6c63ff', borderDash: [6, 4],
+      fill: false, tension: .4, pointRadius: 2
+    },
+    {
+      label: 'Total necessário (casa + casamento + extras)',
+      data: goalLine,
+      borderColor: '#ef5350', borderDash: [4, 4],
+      fill: false, pointRadius: 0, borderWidth: 2
+    }
+  ];
+  if (escrituraLine) datasets.push({
+    label: 'Só escritura',
+    data: escrituraLine,
+    borderColor: '#ffd166', borderDash: [3, 5],
+    fill: false, pointRadius: 0, borderWidth: 1.5
+  });
+  if (weddingLine) datasets.push({
+    label: 'Escritura + casamento',
+    data: weddingLine,
+    borderColor: '#ff6584', borderDash: [3, 5],
+    fill: false, pointRadius: 0, borderWidth: 1.5
+  });
 
   mkChart('chart-casa-evolucao', {
     type: 'line',
-    data: {
-      labels: [...histLabels, ...projLabels],
-      datasets: [
-        {
-          label: 'Poupanças para casa',
-          data: [...histVals, ...Array(projLabels.length).fill(null)],
-          borderColor: '#43d68a', backgroundColor: 'rgba(67,214,138,.15)',
-          fill: true, tension: .4, pointRadius: 3
-        },
-        {
-          label: 'Projeção',
-          data: [...Array(histLabels.length - 1).fill(null), histVals[histVals.length-1], ...projVals],
-          borderColor: '#6c63ff', borderDash: [6, 4],
-          fill: false, tension: .4, pointRadius: 2, pointStyle: 'circle'
-        },
-        {
-          label: 'Objetivo (escritura)',
-          data: goalLine,
-          borderColor: '#ffd166', borderDash: [4, 4],
-          fill: false, pointRadius: 0, borderWidth: 2
-        }
-      ]
-    },
+    data: { labels: allLabels, datasets },
     options: {
       ...baseOpts,
       plugins: {
