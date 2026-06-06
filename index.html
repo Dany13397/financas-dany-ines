@@ -2101,7 +2101,7 @@ async function saveGoal() {
 function initSavingsRate() {
   if (allData.length < 2) return;
 
-  const recent = allData.slice(-7); // últimos 6 meses (precisa de 7 pontos para 6 diferenças)
+  const recent   = allData.slice(-7);
   const casaVals = recent.map(d => d.summary?.['Dinheiro total possivel casa']?.ines || 0);
 
   // Média de crescimento mensal (últimos 6 meses)
@@ -2109,21 +2109,20 @@ function initSavingsRate() {
   for (let i = 1; i < casaVals.length; i++) deltas.push(casaVals[i] - casaVals[i-1]);
   const avgMonth = deltas.length ? deltas.reduce((s,v)=>s+v,0)/deltas.length : 0;
 
-  // Objetivo total (casa + casamento + extras)
-  const naEscritura  = (casaConfig.preco - casaConfig.credito) - casaConfig.pago;
+  // Objetivo = 28.000€ (escritura) + custo líquido do casamento
+  const naEscritura  = (casaConfig.preco - casaConfig.credito) - casaConfig.pago; // 28.000€
   const weddingCusto = weddingConfig.items.reduce((s,i)=>s+(i.custo||0),0);
   const weddingGifts = (weddingConfig.gifts||[]).reduce((s,g)=>s+(g.valor||0),0);
   const weddingNet   = Math.max(0, weddingCusto - weddingGifts);
-  const extrasTotal  = casaConfig.extras.reduce((s,e)=>s+e.custo,0);
-  const totalObjetivo = naEscritura + weddingNet + extrasTotal;
+  const totalObjetivo = naEscritura + weddingNet;
 
   const atual = casaVals[casaVals.length-1];
   const falta = Math.max(0, totalObjetivo - atual);
 
-  // Meses necessários ao ritmo atual
+  // Meses ao ritmo atual
   const mesesAoRitmo = avgMonth > 0 ? Math.ceil(falta / avgMonth) : null;
 
-  // Necessário por mês para atingir em X meses (prazo casamento = Jul 2027)
+  // Meses até ao casamento
   const hoje = new Date();
   const mesesAteCasamento = Math.max(1,
     (WEDDING_DATE.getFullYear() - hoje.getFullYear()) * 12 +
@@ -2131,31 +2130,40 @@ function initSavingsRate() {
   );
   const necessarioMes = falta > 0 ? Math.ceil(falta / mesesAteCasamento) : 0;
 
-  document.getElementById('sr-media').textContent     = fmt(Math.round(avgMonth));
+  document.getElementById('sr-media').textContent      = fmt(Math.round(avgMonth));
   document.getElementById('sr-necessario').textContent = fmt(necessarioMes);
 
   const prevEl = document.getElementById('sr-previsao');
   const msgEl  = document.getElementById('sr-msg');
+  const meses  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  // Breakdown sempre visível
+  const breakdown = `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text2)">
+    📊 Objetivo: <strong style="color:var(--text)">${fmt(naEscritura)}</strong> escritura
+    + <strong style="color:var(--text)">${fmt(weddingNet)}</strong> casamento
+    = <strong style="color:var(--accent)">${fmt(totalObjetivo)}</strong> total
+    · Tens <strong style="color:var(--green)">${fmt(atual)}</strong> · Faltam <strong>${fmt(falta)}</strong>
+  </div>`;
 
   if (falta <= 0) {
     prevEl.textContent = '✅ Já chegaste!';
     prevEl.style.color = 'var(--green)';
-    msgEl.innerHTML = `<span style="color:var(--green)">🎉 Já tens poupanças suficientes para cobrir casa, casamento e extras!</span>`;
-  } else if (!mesesAoRitmo) {
+    msgEl.innerHTML = `<span style="color:var(--green)">🎉 Já tens poupanças suficientes para cobrir a escritura e o casamento!</span>${breakdown}`;
+  } else if (!mesesAoRitmo || avgMonth <= 0) {
     prevEl.textContent = '—';
-    msgEl.innerHTML = `<span style="color:var(--text2)">Não há dados suficientes para calcular a previsão.</span>`;
+    prevEl.style.color = 'var(--text2)';
+    msgEl.innerHTML = `<span style="color:var(--text2)">Sem crescimento suficiente nos últimos meses para calcular previsão.</span>${breakdown}`;
   } else {
     const dataPrevisao = new Date();
     dataPrevisao.setMonth(dataPrevisao.getMonth() + mesesAoRitmo);
-    const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
     prevEl.textContent = meses[dataPrevisao.getMonth()] + ' ' + dataPrevisao.getFullYear();
     prevEl.style.color = mesesAoRitmo <= mesesAteCasamento ? 'var(--green)' : 'var(--red)';
 
     if (avgMonth >= necessarioMes) {
-      msgEl.innerHTML = `✅ <strong>Estás no ritmo certo!</strong> Poupas <strong>${fmt(Math.round(avgMonth))}/mês</strong> e precisas de <strong>${fmt(necessarioMes)}/mês</strong> para atingir o objetivo antes do casamento.`;
+      msgEl.innerHTML = `✅ <strong>Estás no ritmo certo!</strong> Poupas em média <strong>${fmt(Math.round(avgMonth))}/mês</strong> e precisas de <strong>${fmt(necessarioMes)}/mês</strong> para teres tudo pago antes do casamento.${breakdown}`;
     } else {
       const diff = necessarioMes - Math.round(avgMonth);
-      msgEl.innerHTML = `⚠️ Precisas de poupar mais <strong style="color:var(--red)">${fmt(diff)}/mês</strong> para atingires o objetivo antes do casamento (${meses[WEDDING_DATE.getMonth()-1]} ${WEDDING_DATE.getFullYear()}).`;
+      msgEl.innerHTML = `⚠️ Precisas de poupar mais <strong style="color:var(--red)">${fmt(diff)}/mês</strong> para atingires o objetivo antes do casamento. Ao ritmo atual chegas em ${meses[dataPrevisao.getMonth()]} ${dataPrevisao.getFullYear()}.${breakdown}`;
     }
   }
 }
