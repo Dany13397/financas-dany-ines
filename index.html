@@ -1095,11 +1095,12 @@ const CACHE_WEDDING = 'cache_wedding';
 const WEDDING_DATE  = new Date('2027-07-16');
 
 const WEDDING_GUEST_CATS = [
-  { key: 'familia_ines', label: 'Família Inês' },
-  { key: 'familia_dany', label: 'Família Dany' },
-  { key: 'amigos_ines',  label: 'Amigos Inês'  },
-  { key: 'amigos_dany',  label: 'Amigos Dany'  },
-  { key: 'staff',        label: 'Staff'         },
+  { key: 'noivos',       label: '💍 Noivos'      },
+  { key: 'familia_ines', label: 'Família Inês'  },
+  { key: 'familia_dany', label: 'Família Dany'  },
+  { key: 'amigos_ines',  label: 'Amigos Inês'   },
+  { key: 'amigos_dany',  label: 'Amigos Dany'   },
+  { key: 'staff',        label: 'Staff'          },
 ];
 const EMPTY_GUESTS = () => Object.fromEntries(
   WEDDING_GUEST_CATS.map(c => [c.key, []])
