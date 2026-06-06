@@ -439,10 +439,11 @@
           <div class="card"><div class="card-label">⏳ Pendentes</div><div class="card-value" style="color:var(--yellow)" id="gs-pend">0</div></div>
           <div class="card"><div class="card-label">❌ Não vêm</div><div class="card-value" style="color:var(--red)" id="gs-nao">0</div></div>
         </div>
-        <div class="cards-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+        <div class="cards-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
           <div class="card"><div class="card-label">👨 Adultos</div><div class="card-value" id="gs-adultos">0</div></div>
           <div class="card"><div class="card-label">🧒 Crianças</div><div class="card-value" id="gs-criancas">0</div></div>
           <div class="card"><div class="card-label">👶 Bebés</div><div class="card-value" id="gs-bebes">0</div></div>
+          <div class="card"><div class="card-label">🍽️ Pagantes</div><div class="card-value" style="color:var(--accent)" id="gs-pagantes">0</div><div class="card-sub">adulto=1 · criança/staff=½ · bebé=0</div></div>
         </div>
         <!-- Toggle vista -->
         <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -1270,9 +1271,15 @@ function switchGuestView(view) {
   if (view === 'all') renderAllGuests();
 }
 
+function calcPagantes(cat, tipo) {
+  if (tipo === 'bebe') return 0;
+  if (cat === 'staff' || tipo === 'crianca') return 0.5;
+  return 1; // adulto
+}
+
 function renderGuestTab() {
   const guests = weddingConfig.guests || EMPTY_GUESTS();
-  let totTotal=0, totConf=0, totPend=0, totNao=0, totA=0, totC=0, totB=0;
+  let totTotal=0, totConf=0, totPend=0, totNao=0, totA=0, totC=0, totB=0, totPag=0;
 
   WEDDING_GUEST_CATS.forEach(c => {
     (guests[c.key]||[]).forEach(p => {
@@ -1283,16 +1290,18 @@ function renderGuestTab() {
       if (p.tipo==='adulto') totA++;
       else if (p.tipo==='crianca') totC++;
       else totB++;
+      if (p.presenca !== 'nao') totPag += calcPagantes(c.key, p.tipo);
     });
   });
 
-  document.getElementById('gs-total').textContent   = totTotal;
-  document.getElementById('gs-conf').textContent    = totConf;
-  document.getElementById('gs-pend').textContent    = totPend;
-  document.getElementById('gs-nao').textContent     = totNao;
+  document.getElementById('gs-total').textContent    = totTotal;
+  document.getElementById('gs-conf').textContent     = totConf;
+  document.getElementById('gs-pend').textContent     = totPend;
+  document.getElementById('gs-nao').textContent      = totNao;
   document.getElementById('gs-adultos').textContent  = totA;
   document.getElementById('gs-criancas').textContent = totC;
   document.getElementById('gs-bebes').textContent    = totB;
+  document.getElementById('gs-pagantes').textContent = totPag % 1 === 0 ? totPag : totPag.toFixed(1);
 
   // Por categoria
   const sections = document.getElementById('guests-sections');
@@ -1312,11 +1321,12 @@ function renderGuestTab() {
 
     const conf  = list.filter(p=>p.presenca==='confirmado').length;
     const total = list.length;
+    const pag   = list.filter(p=>p.presenca!=='nao').reduce((s,p)=>s+calcPagantes(c.key,p.tipo),0);
     return `
       <div style="margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <span style="font-size:14px;font-weight:700">${c.label}</span>
-          <span style="font-size:12px;color:var(--text2)">${conf}/${total} confirmados</span>
+          <span style="font-size:12px;color:var(--text2)">${conf}/${total} confirmados · <span style="color:var(--accent)">${pag%1===0?pag:pag.toFixed(1)} pagantes</span></span>
         </div>
         ${rows}
         <div style="display:grid;grid-template-columns:1fr 110px 72px;gap:8px;margin-top:12px">
