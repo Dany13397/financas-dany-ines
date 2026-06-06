@@ -1059,14 +1059,24 @@ function initDashboard() {
   setDelta('kpi-ines-delta',ines,pInes);
   setDelta('kpi-dany-delta',dany,pDany);
 
-  const pct = Math.min(100,Math.round(casa/goal*100));
+  // Objetivo real = escritura + casamento líquido + extras casa
+  const naEscritura   = (casaConfig.preco - casaConfig.credito) - casaConfig.pago;
+  const weddingCusto  = weddingConfig.items.reduce((s,i)=>s+(i.custo||0),0);
+  const weddingGifts  = (weddingConfig.gifts||[]).reduce((s,g)=>s+(g.valor||0),0);
+  const weddingNet    = Math.max(0, weddingCusto - weddingGifts);
+  const extrasCasa    = casaConfig.extras.reduce((s,e)=>s+e.custo,0);
+  const totalObjetivo = naEscritura + weddingNet + extrasCasa;
+
+  const pct = Math.min(100, Math.round(casa / totalObjetivo * 100));
   document.getElementById('progress-pct').textContent     = pct+'%';
   document.getElementById('progress-bar').style.width     = pct+'%';
   document.getElementById('progress-current').textContent = fmt(casa);
-  document.getElementById('progress-goal').textContent    = fmt(goal);
-  document.getElementById('goal-display').textContent     = fmtShort(goal);
-  const falta = goal-casa;
-  document.getElementById('progress-desc').textContent = falta>0 ? 'Faltam '+fmt(falta)+' para o objetivo' : '🎉 Objetivo atingido!';
+  document.getElementById('progress-goal').textContent    = fmt(totalObjetivo);
+  document.getElementById('goal-display').textContent     = fmtShort(totalObjetivo);
+  const falta = totalObjetivo - casa;
+  document.getElementById('progress-desc').textContent    = falta > 0
+    ? `Faltam ${fmt(falta)} · escritura ${fmt(naEscritura)} + casamento ${fmt(weddingNet)}${extrasCasa>0?' + extras '+fmt(extrasCasa):''}`
+    : '🎉 Objetivo atingido!';
   document.getElementById('last-update').textContent = 'Último registo: '+dtLabel(last.date);
   initSavingsRate();
 
