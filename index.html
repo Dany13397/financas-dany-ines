@@ -2639,15 +2639,22 @@ function initYearCompare() {
 // ── Performance dos Investimentos ─────────────────────────────
 function initPerformance() {
   if (allData.length < 2) return;
-  const first = allData[0];
+  const prev  = allData[allData.length-2];
   const last  = allData[allData.length-1];
   const tbody = document.getElementById('perf-table-body');
   if (!tbody) return;
 
+  // Cabeçalho com os meses
+  const thead = tbody.closest('table')?.querySelector('thead tr');
+  if (thead) {
+    thead.cells[1].textContent = dtLabel(prev.date);
+    thead.cells[2].textContent = dtLabel(last.date);
+  }
+
   const rows = [];
   ASSET_KEYS.forEach(key => {
-    const fInes = first.assets?.[key]?.ines || 0;
-    const fDany = first.assets?.[key]?.dany || 0;
+    const fInes = prev.assets?.[key]?.ines || 0;
+    const fDany = prev.assets?.[key]?.dany || 0;
     const lInes = last.assets?.[key]?.ines  || 0;
     const lDany = last.assets?.[key]?.dany  || 0;
     const fTot  = fInes + fDany;
