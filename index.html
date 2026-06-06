@@ -13,6 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="Finanças">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
   :root {
     --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3350;
@@ -321,10 +322,28 @@
       </div>
 
       <!-- Taxa de poupança -->
+      <!-- Card de partilha (capturado pelo html2canvas) -->
+      <div id="share-card" style="display:none;background:linear-gradient(135deg,#1a1d27,#22263a);border:1px solid #2e3350;border-radius:16px;padding:24px;color:#e8eaf6;font-family:-apple-system,sans-serif">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div><div style="font-size:18px;font-weight:700;background:linear-gradient(135deg,#6c63ff,#ff6584);-webkit-background-clip:text;-webkit-text-fill-color:transparent">💰 Finanças Dany & Inês</div><div id="sc-mes" style="font-size:12px;color:#8b90b0;margin-top:2px"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div style="background:#0f1117;border-radius:10px;padding:14px"><div style="font-size:10px;color:#8b90b0;text-transform:uppercase;margin-bottom:4px">Patrimônio Total</div><div id="sc-total" style="font-size:22px;font-weight:800;color:#43d68a"></div></div>
+          <div style="background:#0f1117;border-radius:10px;padding:14px"><div style="font-size:10px;color:#8b90b0;text-transform:uppercase;margin-bottom:4px">Para Casa + Casamento</div><div id="sc-objetivo" style="font-size:22px;font-weight:800;color:#6c63ff"></div></div>
+          <div style="background:#0f1117;border-radius:10px;padding:14px"><div style="font-size:10px;color:#8b90b0;text-transform:uppercase;margin-bottom:4px">Inês</div><div id="sc-ines" style="font-size:20px;font-weight:700;color:#ff6584"></div></div>
+          <div style="background:#0f1117;border-radius:10px;padding:14px"><div style="font-size:10px;color:#8b90b0;text-transform:uppercase;margin-bottom:4px">Dany</div><div id="sc-dany" style="font-size:20px;font-weight:700;color:#6c63ff"></div></div>
+        </div>
+        <div style="background:#0f1117;border-radius:10px;padding:12px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#8b90b0;margin-bottom:8px"><span>Progresso para o objetivo</span><span id="sc-pct"></span></div>
+          <div style="background:#22263a;border-radius:99px;height:8px;overflow:hidden"><div id="sc-bar" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#6c63ff,#43d68a)"></div></div>
+        </div>
+      </div>
+
       <div class="chart-card" id="savings-rate-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <div style="font-size:14px;font-weight:600">📈 Taxa de Poupança</div>
           <button onclick="exportPDF()" class="btn btn-sm btn-outline" style="margin-top:0;font-size:12px">📄 Exportar PDF</button>
+          <button onclick="partilharResumo()" class="btn btn-sm btn-outline" style="margin-top:0;font-size:12px">📸 Partilhar</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
           <div style="text-align:center">
@@ -366,6 +385,10 @@
         <div class="chart-title">Variação Mensal do Patrimônio</div>
         <div class="chart-wrap"><canvas id="chart-monthly-delta"></canvas></div>
       </div>
+      <div class="chart-card">
+        <div class="chart-title">Comparar Anos <small>patrimônio para casa mês a mês</small></div>
+        <div class="chart-wrap"><canvas id="chart-year-compare"></canvas></div>
+      </div>
     </div>
 
     <!-- ATIVOS -->
@@ -385,6 +408,13 @@
         <div class="chart-wrap"><canvas id="chart-assets-bar"></canvas></div>
       </div>
       <div class="chart-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px">📊 Performance dos Investimentos</div>
+        <div class="table-wrap" style="margin-bottom:20px">
+          <table class="asset-table">
+            <thead><tr><th>Ativo</th><th style="text-align:right">Primeiro registo</th><th style="text-align:right">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th></tr></thead>
+            <tbody id="perf-table-body"></tbody>
+          </table>
+        </div>
         <div style="font-size:14px;font-weight:600;margin-bottom:16px">Detalhe de Ativos</div>
         <div class="table-wrap">
           <table class="asset-table">
@@ -465,6 +495,7 @@
         <button id="wt-btn-detalhes"   onclick="switchWeddingTab('detalhes')"   style="flex:1;min-width:80px;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:var(--accent);color:white">💍 Detalhes</button>
         <button id="wt-btn-convidados" onclick="switchWeddingTab('convidados')" style="flex:1;min-width:80px;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">👥 Convidados</button>
         <button id="wt-btn-mesas"      onclick="switchWeddingTab('mesas')"      style="flex:1;min-width:80px;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">🪑 Mesas</button>
+        <button id="wt-btn-tarefas"    onclick="switchWeddingTab('tarefas')"    style="flex:1;min-width:80px;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">✅ Tarefas</button>
         <button id="wt-btn-prendas"    onclick="switchWeddingTab('prendas')"    style="flex:1;min-width:80px;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">🎁 Prendas</button>
       </div>
 
@@ -587,6 +618,24 @@
         <div id="mt-tables-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
       </div>
 
+      <!-- ── TAREFAS ── -->
+      <div id="wt-tarefas" style="display:none">
+        <div class="cards-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+          <div class="card"><div class="card-label">Total</div><div class="card-value" id="tk-total">—</div></div>
+          <div class="card"><div class="card-label">✅ Concluídas</div><div class="card-value" style="color:var(--green)" id="tk-done">—</div></div>
+          <div class="card"><div class="card-label">⏳ Por Fazer</div><div class="card-value" style="color:var(--yellow)" id="tk-todo">—</div></div>
+        </div>
+        <div class="form-section" style="margin-bottom:16px">
+          <h3>➕ Nova Tarefa</h3>
+          <div class="form-grid">
+            <div class="form-group"><label>Descrição</label><input type="text" id="tk-nome" placeholder="ex: Contratar fotógrafo" onkeydown="if(event.key==='Enter')addTask()"></div>
+            <div class="form-group"><label>Data Limite</label><input type="date" id="tk-data"></div>
+            <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn" onclick="addTask()">➕ Adicionar</button></div>
+          </div>
+        </div>
+        <div id="tk-list"></div>
+      </div>
+
       <div id="wt-prendas" style="display:none">
         <div class="cards-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
           <div class="card"><div class="card-label">Total Recebido</div><div class="card-value" style="color:var(--green)" id="g-total-recebido">—</div></div>
@@ -622,15 +671,26 @@
         <div class="chart-wrap"><canvas id="chart-casa-evolucao"></canvas></div>
       </div>
 
-      <!-- Crédito (futuro) -->
-      <div class="form-section" style="opacity:.6">
-        <h3>🏦 Detalhes do Crédito <span style="font-size:11px;font-weight:400;color:var(--text2)">(em breve)</span></h3>
+      <!-- Simulador de Crédito -->
+      <div class="form-section">
+        <h3>🏦 Simulador de Crédito</h3>
         <div class="form-grid">
-          <div class="form-group"><label>Valor do Crédito (€)</label><input type="number" placeholder="180000" disabled style="opacity:.5"></div>
-          <div class="form-group"><label>Taxa de Juro (%)</label><input type="number" placeholder="3.5" disabled style="opacity:.5"></div>
-          <div class="form-group"><label>Prazo (anos)</label><input type="number" placeholder="30" disabled style="opacity:.5"></div>
+          <div class="form-group"><label>Valor do Crédito (€)</label><input type="number" id="sim-capital" value="180000" step="1000" oninput="calcSimulador()"></div>
+          <div class="form-group"><label>Taxa de Juro Anual (%)</label><input type="number" id="sim-taxa" value="3.5" step="0.1" oninput="calcSimulador()"></div>
+          <div class="form-group"><label>Prazo (anos)</label><input type="number" id="sim-prazo" value="30" step="1" oninput="calcSimulador()"></div>
         </div>
-        <p style="font-size:12px;color:var(--text2);margin-top:12px">Quando introduzires estes dados vamos calcular a prestação mensal e prever quando acabas de pagar a casa.</p>
+        <div id="sim-result" style="margin-top:16px"></div>
+      </div>
+
+      <!-- Cenários de Poupança -->
+      <div class="chart-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px">🎯 Cenário: E se pouparem mais?</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <span style="font-size:13px;color:var(--text2);white-space:nowrap">+ €/mês extra:</span>
+          <input type="range" id="cenario-slider" min="0" max="3000" step="50" value="0" oninput="calcCenario()" style="flex:1;accent-color:var(--accent)">
+          <span id="cenario-slider-val" style="font-size:14px;font-weight:700;color:var(--accent);min-width:60px;text-align:right">0€</span>
+        </div>
+        <div id="cenario-result"></div>
       </div>
 
       <!-- Detalhes da casa -->
@@ -892,6 +952,7 @@ async function loadApp(session) {
   show('app');
   initDashboard();
   checkMigration();
+  calcCenario();
 
   // Se os dados não chegaram ainda, continua a tentar em segundo plano
   fetchPromise.then(() => {
@@ -1606,7 +1667,7 @@ let _guestView  = 'cat';
 
 function switchWeddingTab(tab) {
   _weddingTab = tab;
-  ['detalhes','convidados','mesas','prendas'].forEach(t => {
+  ['detalhes','convidados','mesas','tarefas','prendas'].forEach(t => {
     document.getElementById('wt-' + t).style.display      = t === tab ? 'block' : 'none';
     const btn = document.getElementById('wt-btn-' + t);
     btn.style.background = t === tab ? 'var(--accent)' : 'none';
@@ -1614,6 +1675,7 @@ function switchWeddingTab(tab) {
   });
   if (tab === 'convidados') renderGuestTab();
   if (tab === 'mesas')      renderMesasTab();
+  if (tab === 'tarefas')    renderTasksTab();
 }
 
 function switchGuestView(view) {
@@ -2183,12 +2245,12 @@ function switchTab(tab, btn) {
   document.getElementById('tab-'+tab).classList.add('active');
   btn.classList.add('active');
   activeTab = tab;
-  if (tab==='evolucao') initEvolucao();
-  if (tab==='ativos')   initAtivos();
+  if (tab==='evolucao') { initEvolucao(); initYearCompare(); }
+  if (tab==='ativos')   { initAtivos(); initPerformance(); }
   if (tab==='ines')     initPerson('ines');
   if (tab==='dany')     initPerson('dany');
   if (tab==='casamento') renderWeddingTab();
-  if (tab==='casa')      renderCasaTab();
+  if (tab==='casa')      { renderCasaTab(); calcSimulador(); calcCenario(); }
 }
 
 // ── Goal ──────────────────────────────────────────────────────
@@ -2393,6 +2455,257 @@ function exportPDF() {
 // ── Init form date ────────────────────────────────────────────
 const now = new Date();
 document.getElementById('f-date').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+
+// ── Simulador de Crédito ─────────────────────────────────────
+function calcSimulador() {
+  const P = parseFloat(document.getElementById('sim-capital').value) || 180000;
+  const r = (parseFloat(document.getElementById('sim-taxa').value) || 3.5) / 100 / 12;
+  const n = (parseFloat(document.getElementById('sim-prazo').value) || 30) * 12;
+  if (!r || !n) return;
+  const pmt  = P * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1);
+  const total = pmt * n;
+  const juros = total - P;
+  const res   = document.getElementById('sim-result');
+  res.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Prestação Mensal</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent)">${fmt(Math.round(pmt))}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Total Pago</div>
+        <div style="font-size:22px;font-weight:800">${fmt(Math.round(total))}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Total de Juros</div>
+        <div style="font-size:22px;font-weight:800;color:var(--red)">${fmt(Math.round(juros))}</div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-top:12px;text-align:center">
+      Para cada €100k emprestados a ${document.getElementById('sim-taxa').value}% durante ${document.getElementById('sim-prazo').value} anos,
+      pagas ${fmt(Math.round(juros/P*100000))} em juros.
+    </p>`;
+}
+
+// ── Cenários de Poupança ──────────────────────────────────────
+function calcCenario() {
+  const extra = parseInt(document.getElementById('cenario-slider').value) || 0;
+  document.getElementById('cenario-slider-val').textContent = extra + '€';
+  if (!allData.length) return;
+
+  const recent   = allData.slice(-7);
+  const casaVals = recent.map(d => d.summary?.['Dinheiro total possivel casa']?.ines || 0);
+  const deltas   = [];
+  for (let i = 1; i < casaVals.length; i++) deltas.push(casaVals[i] - casaVals[i-1]);
+  const avgMonth = deltas.length ? deltas.reduce((s,v)=>s+v,0)/deltas.length : 0;
+
+  const naEscritura  = (casaConfig.preco - casaConfig.credito) - casaConfig.pago;
+  const weddingNet   = Math.max(0, weddingConfig.items.reduce((s,i)=>s+(i.custo||0),0) - (weddingConfig.gifts||[]).reduce((s,g)=>s+(g.valor||0),0));
+  const extrasCasa   = casaConfig.extras.reduce((s,e)=>s+e.custo,0);
+  const totalObj     = naEscritura + weddingNet + extrasCasa;
+  const atual        = casaVals[casaVals.length-1];
+  const falta        = Math.max(0, totalObj - atual);
+
+  const meses        = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  function mesesParaData(m) {
+    const d = new Date(); d.setMonth(d.getMonth() + m);
+    return meses[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  const mesesAtual = avgMonth > 0 ? Math.ceil(falta / avgMonth) : null;
+  const mesesNovo  = (avgMonth + extra) > 0 ? Math.ceil(falta / (avgMonth + extra)) : null;
+  const ganho      = mesesAtual && mesesNovo ? mesesAtual - mesesNovo : null;
+
+  const res = document.getElementById('cenario-result');
+  if (!mesesAtual) { res.innerHTML = `<p style="color:var(--text2);font-size:13px">Sem dados suficientes.</p>`; return; }
+
+  res.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Ao ritmo atual</div>
+        <div style="font-size:18px;font-weight:800;color:var(--text)">${mesesParaData(mesesAtual)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(Math.round(avgMonth))}/mês</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--accent)">
+        <div style="font-size:11px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">Com +${extra}€/mês</div>
+        <div style="font-size:18px;font-weight:800;color:var(--green)">${mesesNovo ? mesesParaData(mesesNovo) : '—'}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(Math.round(avgMonth + extra))}/mês</div>
+      </div>
+    </div>
+    ${ganho && ganho > 0 ? `<p style="font-size:13px;color:var(--green);text-align:center;margin-top:12px">✅ Chegas ao objetivo <strong>${ganho} meses mais cedo!</strong></p>` : ''}`;
+}
+
+// ── Checklist de Tarefas ──────────────────────────────────────
+const DEFAULT_TASKS = [
+  { nome: 'Confirmar local (Quinta das Carpas)', data: '2026-12-01', done: false },
+  { nome: 'Contratar fotógrafo', data: '2026-12-01', done: false },
+  { nome: 'Contratar DJ', data: '2027-01-01', done: false },
+  { nome: 'Escolher e encomendar vestido da noiva', data: '2026-10-01', done: false },
+  { nome: 'Escolher fato do noivo', data: '2027-03-01', done: false },
+  { nome: 'Comprar alianças', data: '2027-05-01', done: false },
+  { nome: 'Enviar convites', data: '2027-04-01', done: false },
+  { nome: 'Definir menu do casamento', data: '2027-04-01', done: false },
+  { nome: 'Contratar celebrante', data: '2027-01-01', done: false },
+  { nome: 'Lua de mel — reservar destino', data: '2027-03-01', done: false },
+];
+
+async function loadTasks() {
+  if (!weddingConfig.tasks) {
+    weddingConfig.tasks = DEFAULT_TASKS.map(t => ({...t}));
+    await saveWeddingConfig();
+  }
+}
+
+async function addTask() {
+  const nome = document.getElementById('tk-nome').value.trim();
+  const data = document.getElementById('tk-data').value;
+  if (!nome) return;
+  if (!weddingConfig.tasks) weddingConfig.tasks = [];
+  weddingConfig.tasks.push({ nome, data, done: false });
+  document.getElementById('tk-nome').value = '';
+  document.getElementById('tk-data').value = '';
+  await saveWeddingConfig();
+  renderTasksTab();
+}
+
+async function toggleTask(i) {
+  weddingConfig.tasks[i].done = !weddingConfig.tasks[i].done;
+  await saveWeddingConfig();
+  renderTasksTab();
+}
+
+async function removeTask(i) {
+  weddingConfig.tasks.splice(i, 1);
+  await saveWeddingConfig();
+  renderTasksTab();
+}
+
+function renderTasksTab() {
+  if (!weddingConfig.tasks) { loadTasks().then(renderTasksTab); return; }
+  const tasks   = weddingConfig.tasks;
+  const total   = tasks.length;
+  const done    = tasks.filter(t=>t.done).length;
+  const todo    = total - done;
+  document.getElementById('tk-total').textContent = total;
+  document.getElementById('tk-done').textContent  = done;
+  document.getElementById('tk-todo').textContent  = todo;
+
+  const sorted = [...tasks.map((t,i)=>({...t,i}))].sort((a,b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return (a.data||'') < (b.data||'') ? -1 : 1;
+  });
+
+  const hoje = new Date().toISOString().slice(0,10);
+  const list  = document.getElementById('tk-list');
+  list.innerHTML = sorted.map(t => {
+    const atrasada  = !t.done && t.data && t.data < hoje;
+    const dataLabel = t.data ? new Date(t.data+'T12:00').toLocaleDateString('pt-PT',{day:'numeric',month:'short',year:'numeric'}) : '';
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;${t.done?'opacity:.5':''}">
+        <button onclick="toggleTask(${t.i})" style="background:${t.done?'var(--green)':'var(--surface2)'};border:2px solid ${t.done?'var(--green)':'var(--border)'};border-radius:50%;width:24px;height:24px;cursor:pointer;flex-shrink:0;color:white;font-size:13px">${t.done?'✓':''}</button>
+        <div style="flex:1">
+          <div style="font-size:13px;${t.done?'text-decoration:line-through;color:var(--text2)':''}">${t.nome}</div>
+          ${dataLabel?`<div style="font-size:11px;color:${atrasada?'var(--red)':'var(--text2)'};margin-top:2px">${atrasada?'⚠️ ':' '}${dataLabel}</div>`:''}
+        </div>
+        <button onclick="removeTask(${t.i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">✕</button>
+      </div>`;
+  }).join('');
+}
+
+// ── Comparar Anos ─────────────────────────────────────────────
+function initYearCompare() {
+  if (!allData.length) return;
+  const years = [...new Set(allData.map(d => d.date.replace('b','').split('-')[0]))].sort();
+  const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const colors = ['#6c63ff','#43d68a','#ffd166','#ff6584','#4fc3f7'];
+
+  const datasets = years.map((yr, idx) => {
+    const yearData = Array(12).fill(null);
+    allData.forEach(d => {
+      const clean = d.date.replace('b','');
+      const [y,m] = clean.split('-');
+      if (y === yr) yearData[parseInt(m)-1] = d.summary?.['Dinheiro total possivel casa']?.ines || 0;
+    });
+    return { label: yr, data: yearData, borderColor: colors[idx%colors.length], backgroundColor: 'transparent', tension: .4, pointRadius: 4, spanGaps: true };
+  });
+
+  mkChart('chart-year-compare', {
+    type: 'line',
+    data: { labels: monthNames, datasets },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { mode: 'index', callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.raw)}` } } } }
+  });
+}
+
+// ── Performance dos Investimentos ─────────────────────────────
+function initPerformance() {
+  if (allData.length < 2) return;
+  const first = allData[0];
+  const last  = allData[allData.length-1];
+  const tbody = document.getElementById('perf-table-body');
+  if (!tbody) return;
+
+  const rows = [];
+  ASSET_KEYS.forEach(key => {
+    const fInes = first.assets?.[key]?.ines || 0;
+    const fDany = first.assets?.[key]?.dany || 0;
+    const lInes = last.assets?.[key]?.ines  || 0;
+    const lDany = last.assets?.[key]?.dany  || 0;
+    const fTot  = fInes + fDany;
+    const lTot  = lInes + lDany;
+    if (!fTot && !lTot) return;
+    const ganho = lTot - fTot;
+    const pct   = fTot > 0 ? ((ganho / fTot) * 100).toFixed(1) : '—';
+    const color = ganho >= 0 ? 'var(--green)' : 'var(--red)';
+    rows.push(`<tr>
+      <td><span class="asset-cat" style="background:${ASSET_COLORS[key]}"></span>${key}</td>
+      <td style="text-align:right;color:var(--text2)">${fmt(fTot)}</td>
+      <td style="text-align:right">${fmt(lTot)}</td>
+      <td style="text-align:right;color:${color}">${ganho>=0?'+':''}${fmt(ganho)}</td>
+      <td style="text-align:right;color:${color};font-weight:600">${pct !== '—' ? (ganho>=0?'+':'')+pct+'%' : '—'}</td>
+    </tr>`);
+  });
+  tbody.innerHTML = rows.join('');
+}
+
+// ── Partilhar Resumo ──────────────────────────────────────────
+async function partilharResumo() {
+  if (!allData.length) return;
+  const last = allData[allData.length-1];
+  const s    = last.summary || {};
+  const total = s['Total juntos']?.ines || 0;
+  const ines  = s['Total Individual']?.ines || 0;
+  const dany  = s['Total Individual']?.dany || 0;
+  const poupanca = s['Dinheiro total possivel casa']?.ines || 0;
+
+  const naEscritura = (casaConfig.preco - casaConfig.credito) - casaConfig.pago;
+  const weddingNet  = Math.max(0, weddingConfig.items.reduce((s,i)=>s+(i.custo||0),0) - (weddingConfig.gifts||[]).reduce((s,g)=>s+(g.valor||0),0));
+  const extrasCasa  = casaConfig.extras.reduce((s,e)=>s+e.custo,0);
+  const totalObj    = naEscritura + weddingNet + extrasCasa;
+  const pct         = totalObj > 0 ? Math.min(100, Math.round(poupanca/totalObj*100)) : 0;
+
+  document.getElementById('sc-mes').textContent     = 'Resumo de ' + dtLabel(last.date);
+  document.getElementById('sc-total').textContent   = fmt(total);
+  document.getElementById('sc-objetivo').textContent = fmt(poupanca) + ' / ' + fmt(totalObj);
+  document.getElementById('sc-ines').textContent    = fmt(ines);
+  document.getElementById('sc-dany').textContent    = fmt(dany);
+  document.getElementById('sc-pct').textContent     = pct + '%';
+  document.getElementById('sc-bar').style.width     = pct + '%';
+
+  const card = document.getElementById('share-card');
+  card.style.display = 'block';
+
+  try {
+    const canvas = await html2canvas(card, { backgroundColor: null, scale: 2 });
+    card.style.display = 'none';
+    const link = document.createElement('a');
+    link.download = `financas-${last.date}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    card.style.display = 'none';
+    alert('Erro ao gerar imagem. Tenta fazer screenshot manual.');
+  }
+}
 
 // ── Exportar Mesas PDF ────────────────────────────────────────
 function exportMesasPDF() {
