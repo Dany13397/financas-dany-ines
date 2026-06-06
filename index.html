@@ -390,98 +390,105 @@
     <!-- CASAMENTO -->
     <div id="tab-casamento" class="tab-panel">
 
-      <!-- Cards topo -->
-      <div class="cards-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px">
-        <div class="card"><div class="card-label">Total Casamento</div><div class="card-value" style="color:var(--ines)" id="w-total">—</div></div>
-        <div class="card"><div class="card-label">Dias para o Casamento</div><div class="card-value" id="w-dias">—</div><div class="card-sub" id="w-data-label"></div></div>
-        <div class="card"><div class="card-label">Já Orçamentado</div><div class="card-value" style="color:var(--green)" id="w-orcamentado">—</div><div class="card-sub" id="w-orcamentado-pct"></div></div>
-        <div class="card"><div class="card-label">Por Definir</div><div class="card-value" style="color:var(--yellow)" id="w-pordefinir">—</div></div>
+      <!-- Sub-navegação -->
+      <div style="display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:20px">
+        <button id="wt-btn-detalhes"  onclick="switchWeddingTab('detalhes')"   style="flex:1;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:var(--accent);color:white">💍 Detalhes</button>
+        <button id="wt-btn-convidados" onclick="switchWeddingTab('convidados')" style="flex:1;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">👥 Convidados</button>
+        <button id="wt-btn-prendas"   onclick="switchWeddingTab('prendas')"    style="flex:1;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">🎁 Prendas</button>
       </div>
 
-      <!-- Impacto na casa -->
-      <div class="chart-card" style="margin-bottom:20px">
-        <div style="font-size:14px;font-weight:600;margin-bottom:14px">🏠 Impacto no Dinheiro da Casa</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
-          <div>
-            <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Poupanças Atuais</div>
-            <div style="font-size:20px;font-weight:700;color:var(--green)" id="w-imp-atual">—</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">− Casamento</div>
-            <div style="font-size:20px;font-weight:700;color:var(--ines)" id="w-imp-casamento">—</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Resta para Casa</div>
-            <div style="font-size:20px;font-weight:700" id="w-imp-resta">—</div>
-          </div>
+      <!-- ── DETALHES ── -->
+      <div id="wt-detalhes">
+        <div class="cards-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px">
+          <div class="card"><div class="card-label">Total Casamento</div><div class="card-value" style="color:var(--ines)" id="w-total">—</div></div>
+          <div class="card"><div class="card-label">Dias para o Casamento</div><div class="card-value" id="w-dias">—</div><div class="card-sub" id="w-data-label"></div></div>
+          <div class="card"><div class="card-label">Já Orçamentado</div><div class="card-value" style="color:var(--green)" id="w-orcamentado">—</div><div class="card-sub" id="w-orcamentado-pct"></div></div>
+          <div class="card"><div class="card-label">Por Definir</div><div class="card-value" style="color:var(--yellow)" id="w-pordefinir">—</div></div>
         </div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)" id="w-imp-msg"></div>
-      </div>
-
-      <!-- Lista de itens -->
-      <div class="form-section">
-        <h3>💍 Itens do Casamento</h3>
-        <div id="w-items-list" style="margin-bottom:16px"></div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Descrição</label>
-            <input type="text" id="w-item-nome" placeholder="ex: Fotógrafo, DJ...">
+        <div class="chart-card" style="margin-bottom:20px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:14px">🏠 Impacto no Dinheiro da Casa</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+            <div><div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Poupanças Atuais</div><div style="font-size:20px;font-weight:700;color:var(--green)" id="w-imp-atual">—</div></div>
+            <div><div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">− Casamento</div><div style="font-size:20px;font-weight:700;color:var(--ines)" id="w-imp-casamento">—</div></div>
+            <div><div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Resta para Casa</div><div style="font-size:20px;font-weight:700" id="w-imp-resta">—</div></div>
           </div>
-          <div class="form-group">
-            <label>Custo estimado (€)</label>
-            <input type="number" id="w-item-custo" placeholder="0" step="100">
-          </div>
-          <div class="form-group" style="justify-content:flex-end">
-            <label>&nbsp;</label>
-            <button class="btn" onclick="addWeddingItem()">➕ Adicionar</button>
-          </div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)" id="w-imp-msg"></div>
         </div>
-        <div class="success-msg" id="w-save-ok">✅ Guardado!</div>
+        <div class="form-section">
+          <h3>💍 Itens do Casamento</h3>
+          <div id="w-items-list" style="margin-bottom:16px"></div>
+          <div class="form-grid">
+            <div class="form-group"><label>Descrição</label><input type="text" id="w-item-nome" placeholder="ex: Fotógrafo, DJ..."></div>
+            <div class="form-group"><label>Custo estimado (€)</label><input type="number" id="w-item-custo" placeholder="0" step="100"></div>
+            <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn" onclick="addWeddingItem()">➕ Adicionar</button></div>
+          </div>
+          <div class="success-msg" id="w-save-ok">✅ Guardado!</div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Distribuição de Custos</div>
+          <div class="chart-wrap"><canvas id="chart-w-pie" style="max-height:280px"></canvas></div>
+        </div>
       </div>
 
-      <!-- Lista de convidados -->
-      <div class="form-section">
-        <h3>👥 Lista de Convidados</h3>
-        <!-- Resumo global -->
-        <div class="cards-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      <!-- ── CONVIDADOS ── -->
+      <div id="wt-convidados" style="display:none">
+        <!-- Resumo -->
+        <div class="cards-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">
           <div class="card"><div class="card-label">Total</div><div class="card-value" id="gs-total">0</div></div>
           <div class="card"><div class="card-label">✅ Confirmados</div><div class="card-value" style="color:var(--green)" id="gs-conf">0</div></div>
           <div class="card"><div class="card-label">⏳ Pendentes</div><div class="card-value" style="color:var(--yellow)" id="gs-pend">0</div></div>
           <div class="card"><div class="card-label">❌ Não vêm</div><div class="card-value" style="color:var(--red)" id="gs-nao">0</div></div>
         </div>
-        <!-- Uma secção por categoria -->
-        <div id="guests-sections"></div>
+        <div class="cards-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+          <div class="card"><div class="card-label">👨 Adultos</div><div class="card-value" id="gs-adultos">0</div></div>
+          <div class="card"><div class="card-label">🧒 Crianças</div><div class="card-value" id="gs-criancas">0</div></div>
+          <div class="card"><div class="card-label">👶 Bebés</div><div class="card-value" id="gs-bebes">0</div></div>
+        </div>
+        <!-- Toggle vista -->
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button id="gv-btn-cat"  onclick="switchGuestView('cat')"  class="btn btn-sm" style="flex:1">📂 Por Categoria</button>
+          <button id="gv-btn-all"  onclick="switchGuestView('all')"  class="btn btn-sm btn-outline" style="flex:1">📋 Lista Completa</button>
+        </div>
+        <!-- Por categoria -->
+        <div id="gv-cat"><div id="guests-sections"></div></div>
+        <!-- Lista completa -->
+        <div id="gv-all" style="display:none">
+          <div style="margin-bottom:12px;display:flex;gap:8px">
+            <input type="text" id="guest-search" placeholder="🔍 Pesquisar convidado..." oninput="renderAllGuests()"
+              style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none">
+            <select id="guest-filter-presenca" onchange="renderAllGuests()"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px;color:var(--text);font-size:13px;outline:none">
+              <option value="">Todos</option>
+              <option value="confirmado">✅ Confirmados</option>
+              <option value="pendente">⏳ Pendentes</option>
+              <option value="nao">❌ Não vêm</option>
+            </select>
+          </div>
+          <div class="chart-card" style="padding:0;overflow:hidden">
+            <table class="asset-table" style="font-size:13px">
+              <thead><tr><th>Nome</th><th>Categoria</th><th>Tipo</th><th style="text-align:center">Presença</th><th></th></tr></thead>
+              <tbody id="all-guests-body"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <!-- Prendas monetárias -->
-      <div class="form-section">
-        <h3>🎁 Prendas Monetárias</h3>
+      <!-- ── PRENDAS ── -->
+      <div id="wt-prendas" style="display:none">
         <div class="cards-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
           <div class="card"><div class="card-label">Total Recebido</div><div class="card-value" style="color:var(--green)" id="g-total-recebido">—</div></div>
           <div class="card"><div class="card-label">Nº de Prendas</div><div class="card-value" id="g-num-prendas">—</div></div>
           <div class="card"><div class="card-label">Média por Prenda</div><div class="card-value" id="g-media-prenda">—</div></div>
         </div>
-        <div class="form-grid" style="margin-bottom:12px">
-          <div class="form-group">
-            <label>Nome do Convidado</label>
-            <input type="text" id="g-nome" placeholder="ex: João e Maria Silva">
+        <div class="form-section">
+          <h3>🎁 Adicionar Prenda</h3>
+          <div class="form-grid" style="margin-bottom:12px">
+            <div class="form-group"><label>Nome do Convidado</label><input type="text" id="g-nome" placeholder="ex: João e Maria Silva"></div>
+            <div class="form-group"><label>Valor (€)</label><input type="number" id="g-valor" placeholder="0" step="10"></div>
+            <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn" onclick="addGift()">➕ Adicionar</button></div>
           </div>
-          <div class="form-group">
-            <label>Valor (€)</label>
-            <input type="number" id="g-valor" placeholder="0" step="10">
-          </div>
-          <div class="form-group" style="justify-content:flex-end">
-            <label>&nbsp;</label>
-            <button class="btn" onclick="addGift()">➕ Adicionar</button>
-          </div>
+          <div id="gifts-list"></div>
         </div>
-        <div id="gifts-list"></div>
-      </div>
-
-      <!-- Gráfico distribuição -->
-      <div class="chart-card">
-        <div class="chart-title">Distribuição de Custos</div>
-        <div class="chart-wrap"><canvas id="chart-w-pie" style="max-height:280px"></canvas></div>
       </div>
 
     </div>
@@ -1184,6 +1191,124 @@ async function togglePresenca(cat, i) {
   renderWeddingTab();
 }
 
+// ── Sub-navegação Casamento ───────────────────────────────────
+let _weddingTab = 'detalhes';
+let _guestView  = 'cat';
+
+function switchWeddingTab(tab) {
+  _weddingTab = tab;
+  ['detalhes','convidados','prendas'].forEach(t => {
+    document.getElementById('wt-' + t).style.display      = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('wt-btn-' + t);
+    btn.style.background = t === tab ? 'var(--accent)' : 'none';
+    btn.style.color      = t === tab ? 'white' : 'var(--text2)';
+  });
+  if (tab === 'convidados') renderGuestTab();
+}
+
+function switchGuestView(view) {
+  _guestView = view;
+  document.getElementById('gv-cat').style.display = view === 'cat' ? 'block' : 'none';
+  document.getElementById('gv-all').style.display = view === 'all' ? 'block' : 'none';
+  document.getElementById('gv-btn-cat').className = view === 'cat' ? 'btn btn-sm' : 'btn btn-sm btn-outline';
+  document.getElementById('gv-btn-all').className = view === 'all' ? 'btn btn-sm' : 'btn btn-sm btn-outline';
+  if (view === 'all') renderAllGuests();
+}
+
+function renderGuestTab() {
+  const guests = weddingConfig.guests || EMPTY_GUESTS();
+  let totTotal=0, totConf=0, totPend=0, totNao=0, totA=0, totC=0, totB=0;
+
+  WEDDING_GUEST_CATS.forEach(c => {
+    (guests[c.key]||[]).forEach(p => {
+      totTotal++;
+      if (p.presenca==='confirmado') totConf++;
+      else if (p.presenca==='nao') totNao++;
+      else totPend++;
+      if (p.tipo==='adulto') totA++;
+      else if (p.tipo==='crianca') totC++;
+      else totB++;
+    });
+  });
+
+  document.getElementById('gs-total').textContent   = totTotal;
+  document.getElementById('gs-conf').textContent    = totConf;
+  document.getElementById('gs-pend').textContent    = totPend;
+  document.getElementById('gs-nao').textContent     = totNao;
+  document.getElementById('gs-adultos').textContent  = totA;
+  document.getElementById('gs-criancas').textContent = totC;
+  document.getElementById('gs-bebes').textContent    = totB;
+
+  // Por categoria
+  const sections = document.getElementById('guests-sections');
+  sections.innerHTML = WEDDING_GUEST_CATS.map(c => {
+    const list = guests[c.key] || [];
+    const rows = list.length
+      ? list.map((p, i) => `
+        <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:13px">${p.nome}</span>
+          ${tipoBadge(p.tipo)}
+          <span onclick="togglePresenca('${c.key}',${i})" style="cursor:pointer" title="Clica para mudar">${presencaBadge(p.presenca||'pendente')}</span>
+          <button onclick="removeGuest('${c.key}',${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;line-height:1">✕</button>
+        </div>`).join('')
+      : '<p style="font-size:12px;color:var(--text2);padding:8px 0">Sem convidados.</p>';
+
+    const conf  = list.filter(p=>p.presenca==='confirmado').length;
+    const total = list.length;
+    return `
+      <div style="margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="font-size:14px;font-weight:700">${c.label}</span>
+          <span style="font-size:12px;color:var(--text2)">${conf}/${total} confirmados</span>
+        </div>
+        ${rows}
+        <div style="display:grid;grid-template-columns:1fr 110px 72px;gap:8px;margin-top:12px">
+          <input type="text" id="gn-${c.key}" placeholder="Nome do convidado"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;width:100%"
+            onkeydown="if(event.key==='Enter')addGuest('${c.key}')">
+          <select id="gt-${c.key}" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);font-size:13px;outline:none">
+            <option value="adulto">Adulto</option>
+            <option value="crianca">Criança</option>
+            <option value="bebe">Bebé</option>
+          </select>
+          <button class="btn btn-sm" onclick="addGuest('${c.key}')" style="margin-top:0">➕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (_guestView === 'all') renderAllGuests();
+}
+
+function renderAllGuests() {
+  const guests  = weddingConfig.guests || EMPTY_GUESTS();
+  const search  = (document.getElementById('guest-search')?.value || '').toLowerCase();
+  const filter  = document.getElementById('guest-filter-presenca')?.value || '';
+  const tbody   = document.getElementById('all-guests-body');
+  if (!tbody) return;
+
+  const rows = [];
+  WEDDING_GUEST_CATS.forEach(c => {
+    (guests[c.key]||[]).forEach((p, i) => {
+      if (search && !p.nome.toLowerCase().includes(search)) return;
+      if (filter && (p.presenca||'pendente') !== filter) return;
+      rows.push({ ...p, cat: c.key, catLabel: c.label, idx: i });
+    });
+  });
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">Nenhum convidado encontrado.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td style="font-weight:500">${r.nome}</td>
+      <td style="color:var(--text2)">${r.catLabel}</td>
+      <td>${tipoBadge(r.tipo)}</td>
+      <td style="text-align:center"><span onclick="togglePresenca('${r.cat}',${r.idx})" style="cursor:pointer">${presencaBadge(r.presenca||'pendente')}</span></td>
+      <td><button onclick="removeGuest('${r.cat}',${r.idx})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px">✕</button></td>
+    </tr>`).join('');
+}
+
 function presencaBadge(estado) {
   const map = {
     confirmado: { label: '✅ Confirmado', color: 'var(--green)' },
@@ -1218,6 +1343,7 @@ async function addWeddingItem() {
   document.getElementById('w-item-custo').value = '';
   await saveWeddingConfig();
   renderWeddingTab();
+  renderGuestTab();
   if (activeTab === 'casa') renderCasaTab();
   const ok = document.getElementById('w-save-ok');
   ok.style.display = 'block'; setTimeout(() => ok.style.display = 'none', 2000);
@@ -1227,6 +1353,7 @@ async function removeWeddingItem(i) {
   weddingConfig.items.splice(i, 1);
   await saveWeddingConfig();
   renderWeddingTab();
+  renderGuestTab();
   if (activeTab === 'casa') renderCasaTab();
 }
 
@@ -1235,6 +1362,7 @@ async function updateWeddingItem(i, field, value) {
   if (field === 'nome')  weddingConfig.items[i].nome  = value;
   await saveWeddingConfig();
   renderWeddingTab();
+  renderGuestTab();
   if (activeTab === 'casa') renderCasaTab();
 }
 
@@ -1286,71 +1414,28 @@ function renderWeddingTab() {
       <button onclick="removeWeddingItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1">✕</button>
     </div>`).join('');
 
-  // Convidados
-  const guests = weddingConfig.guests || EMPTY_GUESTS();
-  let totTotal = 0, totConf = 0, totPend = 0, totNao = 0;
-  const sections = document.getElementById('guests-sections');
-  sections.innerHTML = WEDDING_GUEST_CATS.map(c => {
-    const list = guests[c.key] || [];
-    list.forEach(p => {
-      totTotal++;
-      if (p.presenca === 'confirmado') totConf++;
-      else if (p.presenca === 'nao') totNao++;
-      else totPend++;
-    });
-    const rows = list.length
-      ? list.map((p, i) => `
-        <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-          <span style="font-size:13px">${p.nome}</span>
-          ${tipoBadge(p.tipo)}
-          <span onclick="togglePresenca('${c.key}',${i})" title="Clica para mudar">${presencaBadge(p.presenca || 'pendente')}</span>
-          <button onclick="removeGuest('${c.key}',${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;line-height:1">✕</button>
-        </div>`).join('')
-      : '<p style="font-size:12px;color:var(--text2);padding:8px 0">Sem convidados nesta categoria.</p>';
-    return `
-      <div style="margin-bottom:20px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:13px;font-weight:700;color:var(--text)">${c.label}</span>
-          <span style="font-size:12px;color:var(--text2)">${list.length} convidado${list.length!==1?'s':''}</span>
-        </div>
-        ${rows}
-        <div style="display:grid;grid-template-columns:1fr 120px 80px;gap:8px;margin-top:10px;align-items:center">
-          <input type="text" id="gn-${c.key}" placeholder="Nome do convidado"
-            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;width:100%"
-            onkeydown="if(event.key==='Enter')addGuest('${c.key}')">
-          <select id="gt-${c.key}" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);font-size:13px;outline:none">
-            <option value="adulto">Adulto</option>
-            <option value="crianca">Criança</option>
-            <option value="bebe">Bebé</option>
-          </select>
-          <button class="btn btn-sm" onclick="addGuest('${c.key}')">➕</button>
-        </div>
-      </div>`;
-  }).join('<hr style="border:none;border-top:1px solid var(--border);margin-bottom:20px">');
-
-  document.getElementById('gs-total').textContent = totTotal;
-  document.getElementById('gs-conf').textContent  = totConf;
-  document.getElementById('gs-pend').textContent  = totPend;
-  document.getElementById('gs-nao').textContent   = totNao;
+  // Convidados (só renderiza se o sub-tab estiver visível)
+  if (_weddingTab === 'convidados') renderGuestTab();
 
   // Prendas
   const gifts = weddingConfig.gifts || [];
   const gTotal = gifts.reduce((s, g) => s + g.valor, 0);
-  document.getElementById('g-total-recebido').textContent = fmt(gTotal);
-  document.getElementById('g-num-prendas').textContent    = gifts.length;
-  document.getElementById('g-media-prenda').textContent   = gifts.length ? fmt(Math.round(gTotal / gifts.length)) : '—';
-  const gList = document.getElementById('gifts-list');
-  if (!gifts.length) {
-    gList.innerHTML = '<p style="color:var(--text2);font-size:13px">Ainda não há prendas registadas.</p>';
-  } else {
-    gList.innerHTML = gifts.map((g, i) => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:13px">${g.nome}</span>
-        <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-weight:600;color:var(--green)">${fmt(g.valor)}</span>
-          <button onclick="removeGift(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">✕</button>
-        </div>
-      </div>`).join('');
+  const gTotEl = document.getElementById('g-total-recebido');
+  if (gTotEl) {
+    gTotEl.textContent = fmt(gTotal);
+    document.getElementById('g-num-prendas').textContent  = gifts.length;
+    document.getElementById('g-media-prenda').textContent = gifts.length ? fmt(Math.round(gTotal/gifts.length)) : '—';
+    const gList = document.getElementById('gifts-list');
+    gList.innerHTML = !gifts.length
+      ? '<p style="color:var(--text2);font-size:13px">Ainda não há prendas registadas.</p>'
+      : gifts.map((g,i) => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:13px">${g.nome}</span>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="font-weight:600;color:var(--green)">${fmt(g.valor)}</span>
+              <button onclick="removeGift(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">✕</button>
+            </div>
+          </div>`).join('');
   }
 
   // Gráfico pizza — só itens com custo
