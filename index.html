@@ -415,8 +415,21 @@
           </div>
           <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)" id="w-imp-msg"></div>
         </div>
+        <!-- Resumo pagamentos -->
+        <div class="cards-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+          <div class="card"><div class="card-label">Total Previsto</div><div class="card-value" id="wp-total-previsto">—</div></div>
+          <div class="card"><div class="card-label">✅ Já Pago</div><div class="card-value" style="color:var(--green)" id="wp-total-pago">—</div></div>
+          <div class="card"><div class="card-label">⏳ Em Falta</div><div class="card-value" style="color:var(--red)" id="wp-total-falta">—</div></div>
+        </div>
+
         <div class="form-section">
           <h3>💍 Itens do Casamento</h3>
+          <div style="display:grid;grid-template-columns:1fr 130px 130px 36px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:4px">
+            <span style="font-size:11px;color:var(--text2);text-transform:uppercase">Item</span>
+            <span style="font-size:11px;color:var(--text2);text-transform:uppercase;text-align:right">Custo</span>
+            <span style="font-size:11px;color:var(--text2);text-transform:uppercase;text-align:right">Já Pago</span>
+            <span></span>
+          </div>
           <div id="w-items-list" style="margin-bottom:16px"></div>
           <div class="form-grid">
             <div class="form-group"><label>Descrição</label><input type="text" id="w-item-nome" placeholder="ex: Fotógrafo, DJ..."></div>
@@ -1642,10 +1655,10 @@ async function removeWeddingItem(i) {
 
 async function updateWeddingItem(i, field, value) {
   if (field === 'custo') weddingConfig.items[i].custo = parseFloat(value) || 0;
+  if (field === 'pago')  weddingConfig.items[i].pago  = parseFloat(value) || 0;
   if (field === 'nome')  weddingConfig.items[i].nome  = value;
   await saveWeddingConfig();
   renderWeddingTab();
-  renderGuestTab();
   if (activeTab === 'casa') renderCasaTab();
 }
 
@@ -1686,19 +1699,50 @@ function renderWeddingTab() {
     msgEl.innerHTML = `❌ O custo do casamento ultrapassa as poupanças atuais em <strong style="color:var(--red)">${fmt(Math.abs(restaParaCasa))}</strong>.`;
   }
 
+  // Resumo pagamentos
+  const totalPrevisto = items.reduce((s,i)=>s+(i.custo||0),0);
+  const totalPago     = items.reduce((s,i)=>s+(i.pago||0),0);
+  const totalFalta    = totalPrevisto - totalPago;
+  const wpPrev = document.getElementById('wp-total-previsto');
+  if (wpPrev) {
+    wpPrev.textContent = fmt(totalPrevisto);
+    document.getElementById('wp-total-pago').textContent  = fmt(totalPago);
+    document.getElementById('wp-total-falta').textContent = fmt(Math.max(0, totalFalta));
+  }
+
   // Lista de itens
+  const inp = (val, ph, fn) =>
+    `<div style="position:relative"><input type="number" value="${val||''}" placeholder="${ph}"
+      onchange="${fn}" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+      padding:8px 28px 8px 10px;color:var(--text);font-size:13px;outline:none;width:100%">
+      <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px">€</span></div>`;
+
   const list = document.getElementById('w-items-list');
-  list.innerHTML = items.map((item, i) => `
-    <div style="display:grid;grid-template-columns:1fr 160px 36px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-      <input type="text" value="${item.nome}" onchange="updateWeddingItem(${i},'nome',this.value)"
-        style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;width:100%">
-      <div style="position:relative">
-        <input type="number" value="${item.custo || ''}" placeholder="0" onchange="updateWeddingItem(${i},'custo',this.value)"
-          style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 28px 8px 10px;color:var(--text);font-size:13px;outline:none;width:100%">
-        <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px">€</span>
+  list.innerHTML = items.map((item, i) => {
+    const pago   = item.pago || 0;
+    const custo  = item.custo || 0;
+    const falta  = custo - pago;
+    const pct    = custo > 0 ? Math.min(100, Math.round(pago/custo*100)) : 0;
+    const barColor = pct >= 100 ? 'var(--green)' : pct > 0 ? 'var(--accent)' : 'var(--border)';
+    return `
+    <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="display:grid;grid-template-columns:1fr 130px 130px 36px;gap:8px;align-items:center;margin-bottom:6px">
+        <input type="text" value="${item.nome}" onchange="updateWeddingItem(${i},'nome',this.value)"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;width:100%">
+        ${inp(custo, '0', `updateWeddingItem(${i},'custo',this.value)`)}
+        ${inp(pago,  '0', `updateWeddingItem(${i},'pago',this.value)`)}
+        <button onclick="removeWeddingItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1">✕</button>
       </div>
-      <button onclick="removeWeddingItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1">✕</button>
-    </div>`).join('');
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;background:var(--surface2);border-radius:99px;height:4px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${barColor};border-radius:99px;transition:width .3s"></div>
+        </div>
+        <span style="font-size:11px;color:${falta>0?'var(--text2)':'var(--green)'};white-space:nowrap">
+          ${pct}% ${falta>0?'· falta '+fmt(falta):'· pago ✅'}
+        </span>
+      </div>
+    </div>`;
+  }).join('');
 
   // Convidados (só renderiza se o sub-tab estiver visível)
   if (_weddingTab === 'convidados') renderGuestTab();
