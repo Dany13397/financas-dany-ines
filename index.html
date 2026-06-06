@@ -649,9 +649,7 @@ function boot() {
 
 async function loadApp(session) {
   show('loading');
-  console.log('[1] loadApp start');
   await Promise.all([loadCasaConfig(), loadWeddingConfig(), fetchData()]);
-  console.log('[2] data loaded');
 
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
@@ -686,7 +684,7 @@ async function doLogin() {
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
   btn.disabled = false; btn.textContent = 'Entrar';
   if (error) { err.textContent = error.message === 'Invalid login credentials' ? 'Email ou password incorretos.' : error.message; err.style.display='block'; return; }
-  await loadApp(data.session);
+  // loadApp é chamado via onAuthStateChange SIGNED_IN
 }
 
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
@@ -710,15 +708,12 @@ async function doReset() {
 function showReset() { document.getElementById('form-login').style.display='none'; document.getElementById('form-reset').style.display='block'; }
 function showLogin() { document.getElementById('form-reset').style.display='none'; document.getElementById('form-login').style.display='block'; }
 
-// Gestão de sessão — INITIAL_SESSION lê do storage sem chamada de rede
+// Gestão de sessão
 let _appLoaded = false;
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'INITIAL_SESSION') {
+  if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
     if (!session) { show('auth'); return; }
-    _appLoaded = true;
-    await loadApp(session);
-  }
-  if (event === 'SIGNED_IN' && !_appLoaded) {
+    if (_appLoaded) return;
     _appLoaded = true;
     await loadApp(session);
   }
@@ -730,16 +725,13 @@ const CACHE_ENTRIES = 'cache_entries';
 const CACHE_CONFIG  = 'cache_config';
 
 async function fetchData() {
-  console.log('[fetchData] start');
   const cached = sessionStorage.getItem(CACHE_ENTRIES);
   if (cached) {
     allData = JSON.parse(cached);
     refreshEntriesInBackground();
-    console.log('[fetchData] done (cache)');
-    return;
+      return;
   }
   await fetchEntriesFromDB();
-  console.log('[fetchData] done (DB)');
 }
 
 async function fetchEntriesFromDB() {
@@ -1074,11 +1066,9 @@ let weddingConfig = {
 };
 
 async function loadWeddingConfig() {
-  console.log('[wedding] start');
   const cached = sessionStorage.getItem(CACHE_WEDDING);
-  if (cached) { weddingConfig = JSON.parse(cached); refreshWeddingInBackground(); console.log('[wedding] done (cache)'); return; }
+  if (cached) { weddingConfig = JSON.parse(cached); refreshWeddingInBackground(); return; }
   await fetchWeddingFromDB();
-  console.log('[wedding] done (DB)');
 }
 
 async function fetchWeddingFromDB() {
@@ -1193,11 +1183,9 @@ function renderWeddingTab() {
 let casaConfig = { preco: 260000, pago: 52000, credito: 180000, goal: 80000, extras: [] };
 
 async function loadCasaConfig() {
-  console.log('[casa] start');
   const cached = sessionStorage.getItem(CACHE_CONFIG);
-  if (cached) { casaConfig = JSON.parse(cached); refreshConfigInBackground(); console.log('[casa] done (cache)'); return; }
+  if (cached) { casaConfig = JSON.parse(cached); refreshConfigInBackground(); return; }
   await fetchConfigFromDB();
-  console.log('[casa] done (DB)');
 }
 
 async function fetchConfigFromDB() {
