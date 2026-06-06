@@ -1275,6 +1275,7 @@ function initAtivos() {
   let tI=0,tD=0;
   ASSET_KEYS.forEach(k=>{ const vi=assets[k]?.ines||0, vd=assets[k]?.dany||0; if(!vi&&!vd) return; tI+=vi; tD+=vd; const tr=document.createElement('tr'); tr.innerHTML=`<td><span class="asset-cat" style="background:${ASSET_COLORS[k]}"></span>${k}</td><td style="text-align:right">${vi?fmt(vi):'—'}</td><td style="text-align:right">${vd?fmt(vd):'—'}</td><td style="text-align:right;font-weight:600">${fmt(vi+vd)}</td>`; tbody.appendChild(tr); });
   const tr=document.createElement('tr'); tr.style.fontWeight='700'; tr.innerHTML=`<td>Total</td><td style="text-align:right;color:var(--ines)">${fmt(tI)}</td><td style="text-align:right;color:var(--dany)">${fmt(tD)}</td><td style="text-align:right">${fmt(tI+tD)}</td>`; tbody.appendChild(tr);
+  initPerformance();
 }
 
 // ── Separadores individuais ───────────────────────────────────
@@ -2246,7 +2247,7 @@ function switchTab(tab, btn) {
   btn.classList.add('active');
   activeTab = tab;
   if (tab==='evolucao') { initEvolucao(); initYearCompare(); }
-  if (tab==='ativos')   { initAtivos(); initPerformance(); }
+  if (tab==='ativos')   initAtivos();
   if (tab==='ines')     initPerson('ines');
   if (tab==='dany')     initPerson('dany');
   if (tab==='casamento') renderWeddingTab();
