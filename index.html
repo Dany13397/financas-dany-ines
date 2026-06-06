@@ -391,10 +391,11 @@
     <div id="tab-casamento" class="tab-panel">
 
       <!-- Sub-navegação -->
-      <div style="display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:20px">
-        <button id="wt-btn-detalhes"  onclick="switchWeddingTab('detalhes')"   style="flex:1;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:var(--accent);color:white">💍 Detalhes</button>
-        <button id="wt-btn-convidados" onclick="switchWeddingTab('convidados')" style="flex:1;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">👥 Convidados</button>
-        <button id="wt-btn-prendas"   onclick="switchWeddingTab('prendas')"    style="flex:1;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">🎁 Prendas</button>
+      <div style="display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:20px;flex-wrap:wrap">
+        <button id="wt-btn-detalhes"   onclick="switchWeddingTab('detalhes')"   style="flex:1;min-width:80px;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:var(--accent);color:white">💍 Detalhes</button>
+        <button id="wt-btn-convidados" onclick="switchWeddingTab('convidados')" style="flex:1;min-width:80px;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">👥 Convidados</button>
+        <button id="wt-btn-mesas"      onclick="switchWeddingTab('mesas')"      style="flex:1;min-width:80px;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">🪑 Mesas</button>
+        <button id="wt-btn-prendas"    onclick="switchWeddingTab('prendas')"    style="flex:1;min-width:80px;padding:9px;font-size:13px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:all .2s;background:none;color:var(--text2)">🎁 Prendas</button>
       </div>
 
       <!-- ── DETALHES ── -->
@@ -475,6 +476,33 @@
       </div>
 
       <!-- ── PRENDAS ── -->
+      <!-- ── MESAS ── -->
+      <div id="wt-mesas" style="display:none">
+        <!-- Resumo -->
+        <div class="cards-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+          <div class="card"><div class="card-label">Total Mesas</div><div class="card-value" id="mt-total">—</div></div>
+          <div class="card"><div class="card-label">Colocados</div><div class="card-value" style="color:var(--green)" id="mt-colocados">—</div></div>
+          <div class="card"><div class="card-label">Sem Mesa</div><div class="card-value" style="color:var(--yellow)" id="mt-semmesa">—</div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:20px">
+          <button class="btn btn-sm" onclick="addTable()" style="margin-top:0">➕ Adicionar Mesa</button>
+          <button class="btn btn-sm btn-outline" onclick="autoAssignTables()" style="margin-top:0">🔀 Distribuir Automaticamente</button>
+        </div>
+        <!-- Sem mesa -->
+        <div class="chart-card" style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+            <span>📋 Sem Mesa</span>
+            <span id="mt-semmesa-count" style="font-size:12px;color:var(--text2)"></span>
+          </div>
+          <div id="mt-unassigned" style="display:flex;flex-wrap:wrap;gap:6px;min-height:40px"
+            ondragover="event.preventDefault()" ondrop="dropGuest(event,'__unassigned__')">
+            <span style="font-size:12px;color:var(--text2);align-self:center" id="mt-unassigned-empty">Todos os convidados estão numa mesa.</span>
+          </div>
+        </div>
+        <!-- Mesas -->
+        <div id="mt-tables-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+      </div>
+
       <div id="wt-prendas" style="display:none">
         <div class="cards-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
           <div class="card"><div class="card-label">Total Recebido</div><div class="card-value" style="color:var(--green)" id="g-total-recebido">—</div></div>
@@ -1247,19 +1275,206 @@ async function togglePresenca(cat, i) {
   renderWeddingTab();
 }
 
+// ── Mesas ─────────────────────────────────────────────────────
+const TABLE_MIN = 8, TABLE_MAX = 12;
+
+function getOrInitTables() {
+  if (!weddingConfig.tables) {
+    weddingConfig.tables = [
+      { id: 'noivos', nome: 'Mesa dos Noivos', guests: [] }
+    ];
+  }
+  return weddingConfig.tables;
+}
+
+// Todos os convidados da lista (com cat e tipo)
+function getAllGuests() {
+  const all = [];
+  const g = weddingConfig.guests || EMPTY_GUESTS();
+  WEDDING_GUEST_CATS.forEach(c => {
+    (g[c.key]||[]).forEach(p => all.push({ nome: p.nome, cat: c.key, tipo: p.tipo, catLabel: WEDDING_GUEST_CATS.find(x=>x.key===c.key)?.label }));
+  });
+  return all;
+}
+
+function getAssignedKeys() {
+  const tables = getOrInitTables();
+  const set = new Set();
+  tables.forEach(t => t.guests.forEach(g => set.add(g.cat+'|'+g.nome)));
+  return set;
+}
+
+async function addTable() {
+  const tables = getOrInitTables();
+  const nums = tables.filter(t=>t.id!=='noivos').map(t=>parseInt(t.nome.replace('Mesa ',''))||0);
+  const next = nums.length ? Math.max(...nums)+1 : 1;
+  tables.push({ id: 'mesa'+next, nome: 'Mesa '+next, guests: [] });
+  await saveWeddingConfig();
+  renderMesasTab();
+}
+
+async function removeTable(id) {
+  const tables = getOrInitTables();
+  const idx = tables.findIndex(t=>t.id===id);
+  if (idx === -1 || id === 'noivos') return;
+  // Devolve os convidados para "sem mesa" (apenas remove da mesa)
+  tables.splice(idx, 1);
+  await saveWeddingConfig();
+  renderMesasTab();
+}
+
+// Drag & Drop
+let _dragGuest = null; // { nome, cat, tipo, fromTable }
+
+function dragStart(event, nome, cat, tipo, fromTable) {
+  _dragGuest = { nome, cat, tipo, fromTable };
+  event.dataTransfer.effectAllowed = 'move';
+  event.target.style.opacity = '0.4';
+}
+
+function dragEnd(event) {
+  event.target.style.opacity = '1';
+}
+
+async function dropGuest(event, toTableId) {
+  event.preventDefault();
+  if (!_dragGuest) return;
+  const { nome, cat, tipo, fromTable } = _dragGuest;
+  _dragGuest = null;
+
+  const tables = getOrInitTables();
+
+  // Remove da mesa de origem
+  if (fromTable !== '__unassigned__') {
+    const src = tables.find(t=>t.id===fromTable);
+    if (src) src.guests = src.guests.filter(g=>!(g.nome===nome && g.cat===cat));
+  }
+
+  // Adiciona à mesa de destino
+  if (toTableId !== '__unassigned__') {
+    const dst = tables.find(t=>t.id===toTableId);
+    if (dst && !dst.guests.find(g=>g.nome===nome && g.cat===cat)) {
+      dst.guests.push({ nome, cat, tipo });
+    }
+  }
+
+  await saveWeddingConfig();
+  renderMesasTab();
+}
+
+async function autoAssignTables() {
+  const tables  = getOrInitTables();
+  const all     = getAllGuests();
+  const assigned = getAssignedKeys();
+  const unassigned = all.filter(g => !assigned.has(g.cat+'|'+g.nome));
+  if (!unassigned.length) return;
+
+  // Distribui pelos slots disponíveis
+  let i = 0;
+  for (const t of tables) {
+    while (t.guests.length < TABLE_MAX && i < unassigned.length) {
+      const g = unassigned[i++];
+      if (!t.guests.find(x=>x.nome===g.nome && x.cat===g.cat))
+        t.guests.push({ nome: g.nome, cat: g.cat, tipo: g.tipo });
+    }
+  }
+  // Se ainda há convidados cria mesas novas
+  while (i < unassigned.length) {
+    const nums = tables.filter(t=>t.id!=='noivos').map(t=>parseInt(t.nome.replace('Mesa ',''))||0);
+    const next = nums.length ? Math.max(...nums)+1 : 1;
+    const t = { id:'mesa'+next, nome:'Mesa '+next, guests:[] };
+    tables.push(t);
+    while (t.guests.length < TABLE_MAX && i < unassigned.length) {
+      const g = unassigned[i++];
+      t.guests.push({ nome: g.nome, cat: g.cat, tipo: g.tipo });
+    }
+  }
+
+  await saveWeddingConfig();
+  renderMesasTab();
+}
+
+function guestChip(g, tableId) {
+  const catLabel = WEDDING_GUEST_CATS.find(c=>c.key===g.cat)?.label || g.cat;
+  const tipoColor = { adulto:'#6c63ff', crianca:'#ffd166', bebe:'#ff9f43' }[g.tipo] || '#8b90b0';
+  return `<div draggable="true"
+    ondragstart="dragStart(event,'${g.nome.replace(/'/g,"\\'")}','${g.cat}','${g.tipo||'adulto'}','${tableId}')"
+    ondragend="dragEnd(event)"
+    style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;
+           font-size:12px;cursor:grab;display:flex;align-items:center;gap:6px;user-select:none">
+    <span style="width:8px;height:8px;border-radius:50%;background:${tipoColor};flex-shrink:0"></span>
+    <span>${g.nome}</span>
+    <span style="font-size:10px;color:var(--text2)">${catLabel}</span>
+  </div>`;
+}
+
+function renderMesasTab() {
+  const tables   = getOrInitTables();
+  const all      = getAllGuests();
+  const assigned = getAssignedKeys();
+  const unassigned = all.filter(g => !assigned.has(g.cat+'|'+g.nome));
+
+  // Cards resumo
+  document.getElementById('mt-total').textContent     = tables.length;
+  document.getElementById('mt-colocados').textContent = all.length - unassigned.length;
+  document.getElementById('mt-semmesa').textContent   = unassigned.length;
+  document.getElementById('mt-semmesa-count').textContent = unassigned.length + ' convidados';
+
+  // Sem mesa
+  const unEl = document.getElementById('mt-unassigned');
+  const emptyEl = document.getElementById('mt-unassigned-empty');
+  if (unassigned.length) {
+    emptyEl.style.display = 'none';
+    unEl.innerHTML = unassigned.map(g => guestChip(g,'__unassigned__')).join('');
+  } else {
+    emptyEl.style.display = 'block';
+    unEl.innerHTML = '';
+    unEl.appendChild(emptyEl);
+  }
+
+  // Mesas
+  const grid = document.getElementById('mt-tables-grid');
+  grid.innerHTML = tables.map(t => {
+    const count    = t.guests.length;
+    const pagantes = t.guests.reduce((s,g)=>s+calcPagantes(g.cat,g.tipo||'adulto'),0);
+    const full     = count >= TABLE_MAX;
+    const warn     = count > TABLE_MAX;
+    const statusColor = warn ? 'var(--red)' : full ? 'var(--yellow)' : 'var(--green)';
+    const isNoivos = t.id === 'noivos';
+    return `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px"
+        ondragover="event.preventDefault()" ondrop="dropGuest(event,'${t.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="font-size:14px;font-weight:700">${isNoivos?'💍 ':' '}${t.nome}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:${statusColor};font-weight:600">${count}${isNoivos?'':'/'+TABLE_MAX}</span>
+            ${!isNoivos?`<span style="font-size:11px;color:var(--text2)">${pagantes%1===0?pagantes:pagantes.toFixed(1)} pag.</span>`:''}
+            ${!isNoivos?`<button onclick="removeTable('${t.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px" title="Remover mesa">✕</button>`:''}
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;min-height:48px;padding:8px;background:var(--surface2);border-radius:8px;border:1px dashed var(--border)">
+          ${t.guests.map(g=>guestChip(g,t.id)).join('') || '<span style="font-size:12px;color:var(--text2)">Arrasta convidados para aqui</span>'}
+        </div>
+        ${!isNoivos && count > 0 && count < TABLE_MIN ? `<p style="font-size:11px;color:var(--yellow);margin-top:8px">⚠️ Abaixo do mínimo (${TABLE_MIN})</p>` : ''}
+        ${warn ? `<p style="font-size:11px;color:var(--red);margin-top:8px">⚠️ Acima do máximo (${TABLE_MAX})</p>` : ''}
+      </div>`;
+  }).join('');
+}
+
 // ── Sub-navegação Casamento ───────────────────────────────────
 let _weddingTab = 'detalhes';
 let _guestView  = 'cat';
 
 function switchWeddingTab(tab) {
   _weddingTab = tab;
-  ['detalhes','convidados','prendas'].forEach(t => {
+  ['detalhes','convidados','mesas','prendas'].forEach(t => {
     document.getElementById('wt-' + t).style.display      = t === tab ? 'block' : 'none';
     const btn = document.getElementById('wt-btn-' + t);
     btn.style.background = t === tab ? 'var(--accent)' : 'none';
     btn.style.color      = t === tab ? 'white' : 'var(--text2)';
   });
   if (tab === 'convidados') renderGuestTab();
+  if (tab === 'mesas')      renderMesasTab();
 }
 
 function switchGuestView(view) {
