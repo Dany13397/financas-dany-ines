@@ -1095,6 +1095,7 @@ async function addWeddingItem() {
   document.getElementById('w-item-custo').value = '';
   await saveWeddingConfig();
   renderWeddingTab();
+  if (activeTab === 'casa') renderCasaTab();
   const ok = document.getElementById('w-save-ok');
   ok.style.display = 'block'; setTimeout(() => ok.style.display = 'none', 2000);
 }
@@ -1103,6 +1104,7 @@ async function removeWeddingItem(i) {
   weddingConfig.items.splice(i, 1);
   await saveWeddingConfig();
   renderWeddingTab();
+  if (activeTab === 'casa') renderCasaTab();
 }
 
 async function updateWeddingItem(i, field, value) {
@@ -1110,6 +1112,7 @@ async function updateWeddingItem(i, field, value) {
   if (field === 'nome')  weddingConfig.items[i].nome  = value;
   await saveWeddingConfig();
   renderWeddingTab();
+  if (activeTab === 'casa') renderCasaTab();
 }
 
 function renderWeddingTab() {
@@ -1363,11 +1366,12 @@ function renderCasaTab() {
 
   // Resumo
   const tbody = document.getElementById('casa-resumo-body');
-  const totalVosso  = casaConfig.preco - casaConfig.credito;           // 80k
-  const naEscritura = totalVosso - casaConfig.pago;                    // 28k
-  const totalNecessario = totalVosso + extrasTotal;
+  const totalVosso    = casaConfig.preco - casaConfig.credito;
+  const naEscritura   = totalVosso - casaConfig.pago;
+  const weddingTotal  = weddingConfig.items.reduce((s, i) => s + (i.custo || 0), 0);
   const poupancaAtual = allData.length ? (allData[allData.length-1].summary?.['Dinheiro total possivel casa']?.ines || 0) : 0;
-  const aindaFalta = Math.max(0, naEscritura + extrasTotal - poupancaAtual);
+  const totalNecessario = naEscritura + extrasTotal + weddingTotal;
+  const aindaFalta    = Math.max(0, totalNecessario - poupancaAtual);
   const rows = [
     ['Preço total da casa',              fmt(casaConfig.preco),    ''],
     ['Crédito bancário',                 '− ' + fmt(casaConfig.credito), 'color:var(--text2)'],
@@ -1376,11 +1380,12 @@ function renderCasaTab() {
     ['Já pago (sinal/entrada)',          '− ' + fmt(casaConfig.pago), 'color:var(--green)'],
     ['A levar na escritura',             fmt(naEscritura),         'font-weight:700;color:var(--accent)'],
     ['',                                 '',                       ''],
-    ['Total extras / obras',             fmt(extrasTotal),         'color:var(--yellow)'],
-    ['Total necessário (escritura + extras)', fmt(naEscritura + extrasTotal), 'font-weight:700'],
+    ['💒 Casamento',                     fmt(weddingTotal),        'color:var(--ines)'],
+    ['🛋️ Extras / obras casa',          fmt(extrasTotal),         'color:var(--yellow)'],
+    ['Total necessário',                 fmt(totalNecessario),     'font-weight:700'],
     ['',                                 '',                       ''],
     ['Poupança atual (para casa)',        fmt(poupancaAtual),       'color:var(--green)'],
-    ['Ainda falta',                      fmt(aindaFalta),          'font-weight:700;color:' + (aindaFalta <= 0 ? 'var(--green)' : 'var(--accent)')],
+    ['Ainda falta',                      fmt(aindaFalta),          'font-weight:700;color:' + (aindaFalta <= 0 ? 'var(--green)' : 'var(--red)')],
   ];
   tbody.innerHTML = rows.map(([l, v, s]) =>
     `<tr><td style="color:var(--text2);font-size:13px">${l}</td><td style="text-align:right;font-size:13px;${s}">${v}</td></tr>`
