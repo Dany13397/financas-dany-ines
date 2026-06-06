@@ -1478,17 +1478,17 @@ function renderWeddingTab() {
   if (_weddingTab === 'convidados') renderGuestTab();
 
   // Prendas
-  const gifts = weddingConfig.gifts || [];
-  const gTotal = gifts.reduce((s, g) => s + g.valor, 0);
+  const gTotal = (weddingConfig.gifts || []).reduce((s, g) => s + g.valor, 0);
   const gTotEl = document.getElementById('g-total-recebido');
   if (gTotEl) {
+    const giftsList = weddingConfig.gifts || [];
     gTotEl.textContent = fmt(gTotal);
-    document.getElementById('g-num-prendas').textContent  = gifts.length;
-    document.getElementById('g-media-prenda').textContent = gifts.length ? fmt(Math.round(gTotal/gifts.length)) : '—';
+    document.getElementById('g-num-prendas').textContent  = giftsList.length;
+    document.getElementById('g-media-prenda').textContent = giftsList.length ? fmt(Math.round(gTotal/giftsList.length)) : '—';
     const gList = document.getElementById('gifts-list');
-    gList.innerHTML = !gifts.length
+    gList.innerHTML = !giftsList.length
       ? '<p style="color:var(--text2);font-size:13px">Ainda não há prendas registadas.</p>'
-      : gifts.map((g,i) => `
+      : giftsList.map((g,i) => `
           <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">
             <span style="font-size:13px">${g.nome}</span>
             <div style="display:flex;align-items:center;gap:12px">
