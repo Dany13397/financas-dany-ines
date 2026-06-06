@@ -442,31 +442,15 @@
       <!-- Lista de convidados -->
       <div class="form-section">
         <h3>👥 Lista de Convidados</h3>
-        <div class="table-wrap" style="margin-bottom:16px">
-          <table class="asset-table">
-            <thead>
-              <tr>
-                <th>Categoria</th>
-                <th style="text-align:center">Adultos</th>
-                <th style="text-align:center">Crianças<br><small style="font-weight:400;color:var(--text2)">4-10 anos</small></th>
-                <th style="text-align:center">Bebés<br><small style="font-weight:400;color:var(--text2)">0-3 anos</small></th>
-              </tr>
-            </thead>
-            <tbody id="guests-table-body"></tbody>
-            <tfoot>
-              <tr style="font-weight:700;border-top:2px solid var(--border)">
-                <td>Total</td>
-                <td style="text-align:center;color:var(--accent)" id="g-tot-adultos">0</td>
-                <td style="text-align:center;color:var(--yellow)" id="g-tot-criancas">0</td>
-                <td style="text-align:center;color:var(--green)" id="g-tot-bebes">0</td>
-              </tr>
-              <tr style="font-weight:800">
-                <td style="color:var(--text2)">Total Geral</td>
-                <td colspan="3" style="text-align:center;font-size:18px" id="g-tot-total">0</td>
-              </tr>
-            </tfoot>
-          </table>
+        <!-- Resumo global -->
+        <div class="cards-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+          <div class="card"><div class="card-label">Total</div><div class="card-value" id="gs-total">0</div></div>
+          <div class="card"><div class="card-label">✅ Confirmados</div><div class="card-value" style="color:var(--green)" id="gs-conf">0</div></div>
+          <div class="card"><div class="card-label">⏳ Pendentes</div><div class="card-value" style="color:var(--yellow)" id="gs-pend">0</div></div>
+          <div class="card"><div class="card-label">❌ Não vêm</div><div class="card-value" style="color:var(--red)" id="gs-nao">0</div></div>
         </div>
+        <!-- Uma secção por categoria -->
+        <div id="guests-sections"></div>
       </div>
 
       <!-- Prendas monetárias -->
@@ -1111,8 +1095,10 @@ const WEDDING_GUEST_CATS = [
   { key: 'staff',        label: 'Staff'         },
 ];
 const EMPTY_GUESTS = () => Object.fromEntries(
-  WEDDING_GUEST_CATS.map(c => [c.key, { adultos: 0, criancas: 0, bebes: 0 }])
+  WEDDING_GUEST_CATS.map(c => [c.key, []])
 );
+// presenca: 'pendente' | 'confirmado' | 'nao'
+// tipo: 'adulto' | 'crianca' | 'bebe'
 
 let weddingConfig = {
   items: [
@@ -1145,9 +1131,10 @@ async function fetchWeddingFromDB() {
     weddingConfig = data.value;
     if (!weddingConfig.gifts)  weddingConfig.gifts  = [];
     if (!weddingConfig.guests) weddingConfig.guests  = EMPTY_GUESTS();
-    // garante que todas as categorias existem
+    // migra estrutura antiga (contadores) para nova (lista de nomes)
     WEDDING_GUEST_CATS.forEach(c => {
-      if (!weddingConfig.guests[c.key]) weddingConfig.guests[c.key] = { adultos: 0, criancas: 0, bebes: 0 };
+      const v = weddingConfig.guests[c.key];
+      if (!v || !Array.isArray(v)) weddingConfig.guests[c.key] = [];
     });
   }
   sessionStorage.setItem(CACHE_WEDDING, JSON.stringify(weddingConfig));
@@ -1172,25 +1159,45 @@ async function removeGift(i) {
 }
 
 // ── Convidados ────────────────────────────────────────────────
-async function updateGuest(cat, type, val) {
-  weddingConfig.guests[cat][type] = parseInt(val) || 0;
+async function addGuest(cat) {
+  const nomeEl = document.getElementById(`gn-${cat}`);
+  const tipoEl = document.getElementById(`gt-${cat}`);
+  const nome = nomeEl.value.trim();
+  if (!nome) return;
+  weddingConfig.guests[cat].push({ nome, tipo: tipoEl.value, presenca: 'pendente' });
+  nomeEl.value = '';
   await saveWeddingConfig();
-  renderGuestSummary();
+  renderWeddingTab();
 }
 
-function renderGuestSummary() {
-  const g = weddingConfig.guests;
-  let totA = 0, totC = 0, totB = 0;
-  WEDDING_GUEST_CATS.forEach(c => {
-    totA += g[c.key].adultos  || 0;
-    totC += g[c.key].criancas || 0;
-    totB += g[c.key].bebes    || 0;
-  });
-  const total = totA + totC + totB;
-  document.getElementById('g-tot-adultos').textContent  = totA;
-  document.getElementById('g-tot-criancas').textContent = totC;
-  document.getElementById('g-tot-bebes').textContent    = totB;
-  document.getElementById('g-tot-total').textContent    = total;
+async function removeGuest(cat, i) {
+  weddingConfig.guests[cat].splice(i, 1);
+  await saveWeddingConfig();
+  renderWeddingTab();
+}
+
+async function togglePresenca(cat, i) {
+  const estados = ['pendente', 'confirmado', 'nao'];
+  const atual = weddingConfig.guests[cat][i].presenca || 'pendente';
+  weddingConfig.guests[cat][i].presenca = estados[(estados.indexOf(atual) + 1) % estados.length];
+  await saveWeddingConfig();
+  renderWeddingTab();
+}
+
+function presencaBadge(estado) {
+  const map = {
+    confirmado: { label: '✅ Confirmado', color: 'var(--green)' },
+    nao:        { label: '❌ Não vem',   color: 'var(--red)'   },
+    pendente:   { label: '⏳ Pendente',  color: 'var(--yellow)' },
+  };
+  const { label, color } = map[estado] || map.pendente;
+  return `<span style="font-size:11px;font-weight:600;color:${color};cursor:pointer;white-space:nowrap">${label}</span>`;
+}
+
+function tipoBadge(tipo) {
+  const map = { adulto: ['Adulto','#6c63ff'], crianca: ['Criança','#ffd166'], bebe: ['Bebé','#ff9f43'] };
+  const [label, color] = map[tipo] || map.adulto;
+  return `<span style="font-size:10px;background:${color}22;color:${color};border-radius:4px;padding:2px 6px">${label}</span>`;
 }
 
 async function refreshWeddingInBackground() {
@@ -1280,22 +1287,51 @@ function renderWeddingTab() {
     </div>`).join('');
 
   // Convidados
-  const gtbody = document.getElementById('guests-table-body');
-  const g = weddingConfig.guests || EMPTY_GUESTS();
-  gtbody.innerHTML = WEDDING_GUEST_CATS.map(c => {
-    const row = g[c.key] || { adultos: 0, criancas: 0, bebes: 0 };
-    const inp = (type, val) => `<input type="number" min="0" value="${val||0}"
-      onchange="updateGuest('${c.key}','${type}',this.value)"
-      style="width:64px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-             padding:6px 8px;color:var(--text);font-size:13px;text-align:center;outline:none">`;
-    return `<tr>
-      <td style="font-size:13px;font-weight:600">${c.label}</td>
-      <td style="text-align:center">${inp('adultos', row.adultos)}</td>
-      <td style="text-align:center">${inp('criancas', row.criancas)}</td>
-      <td style="text-align:center">${inp('bebes', row.bebes)}</td>
-    </tr>`;
-  }).join('');
-  renderGuestSummary();
+  const guests = weddingConfig.guests || EMPTY_GUESTS();
+  let totTotal = 0, totConf = 0, totPend = 0, totNao = 0;
+  const sections = document.getElementById('guests-sections');
+  sections.innerHTML = WEDDING_GUEST_CATS.map(c => {
+    const list = guests[c.key] || [];
+    list.forEach(p => {
+      totTotal++;
+      if (p.presenca === 'confirmado') totConf++;
+      else if (p.presenca === 'nao') totNao++;
+      else totPend++;
+    });
+    const rows = list.length
+      ? list.map((p, i) => `
+        <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:13px">${p.nome}</span>
+          ${tipoBadge(p.tipo)}
+          <span onclick="togglePresenca('${c.key}',${i})" title="Clica para mudar">${presencaBadge(p.presenca || 'pendente')}</span>
+          <button onclick="removeGuest('${c.key}',${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;line-height:1">✕</button>
+        </div>`).join('')
+      : '<p style="font-size:12px;color:var(--text2);padding:8px 0">Sem convidados nesta categoria.</p>';
+    return `
+      <div style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:13px;font-weight:700;color:var(--text)">${c.label}</span>
+          <span style="font-size:12px;color:var(--text2)">${list.length} convidado${list.length!==1?'s':''}</span>
+        </div>
+        ${rows}
+        <div style="display:grid;grid-template-columns:1fr 120px 80px;gap:8px;margin-top:10px;align-items:center">
+          <input type="text" id="gn-${c.key}" placeholder="Nome do convidado"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;width:100%"
+            onkeydown="if(event.key==='Enter')addGuest('${c.key}')">
+          <select id="gt-${c.key}" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);font-size:13px;outline:none">
+            <option value="adulto">Adulto</option>
+            <option value="crianca">Criança</option>
+            <option value="bebe">Bebé</option>
+          </select>
+          <button class="btn btn-sm" onclick="addGuest('${c.key}')">➕</button>
+        </div>
+      </div>`;
+  }).join('<hr style="border:none;border-top:1px solid var(--border);margin-bottom:20px">');
+
+  document.getElementById('gs-total').textContent = totTotal;
+  document.getElementById('gs-conf').textContent  = totConf;
+  document.getElementById('gs-pend').textContent  = totPend;
+  document.getElementById('gs-nao').textContent   = totNao;
 
   // Prendas
   const gifts = weddingConfig.gifts || [];
