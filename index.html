@@ -690,6 +690,7 @@ const dtLabel = d => {
 const CACHE_SESSION = 'cache_session';
 
 function boot() {
+  console.log('[boot] start');
   // Acorda a BD em segundo plano
   sb.from('entries').select('count', { count: 'exact', head: true }).then(() => {}).catch(() => {});
 
@@ -698,8 +699,10 @@ function boot() {
   const entries = sessionStorage.getItem(CACHE_ENTRIES);
   const config  = sessionStorage.getItem(CACHE_CONFIG);
   const wedding = sessionStorage.getItem(CACHE_WEDDING);
+  console.log('[boot] cache:', { hint: !!hint, entries: !!entries, config: !!config, wedding: !!wedding });
 
   if (hint && entries && config && wedding) {
+    console.log('[boot] loading from cache instantly');
     const { email, name } = JSON.parse(hint);
     allData       = JSON.parse(entries);
     casaConfig    = JSON.parse(config);
@@ -724,12 +727,16 @@ function boot() {
     return;
   }
 
+  console.log('[boot] no cache, waiting for auth event');
   show('loading');
 }
 
 async function loadApp(session) {
+  console.log('[loadApp] start', session?.user?.email);
   show('loading');
+  console.log('[loadApp] fetching data...');
   await Promise.all([loadCasaConfig(), loadWeddingConfig(), fetchData()]);
+  console.log('[loadApp] data ready');
 
   goal = casaConfig.goal;
   document.getElementById('goal-input').value = goal;
@@ -794,6 +801,7 @@ function showLogin() { document.getElementById('form-reset').style.display='none
 // Gestão de sessão
 let _appLoaded = false;
 sb.auth.onAuthStateChange(async (event, session) => {
+  console.log('[auth]', event, !!session);
   if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
     if (!session) { show('auth'); return; }
     if (_appLoaded) return;
