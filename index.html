@@ -220,6 +220,7 @@
     </div>
     <div class="header-right">
       <div class="goal-badge" onclick="openGoalModal()">🏠 <span id="goal-display">—</span></div>
+      <div class="user-badge" id="privacy-btn" onclick="togglePrivacy()" title="Mostrar/esconder valores">👁️</div>
       <div class="user-badge" id="user-badge" onclick="doLogout()" title="Clica para sair">⬡</div>
     </div>
   </div>
@@ -865,8 +866,11 @@ let activeTab = 'dashboard';
 const charts  = {};
 
 // ── Formatters ───────────────────────────────────────────────
-const fmt = v => v == null ? '—' : new Intl.NumberFormat('pt-PT', {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
-const fmtShort = v => { if (!v) return '0€'; return v >= 1000 ? (v/1000).toFixed(1)+'k€' : Math.round(v)+'€'; };
+let privacyMode = false;
+const _fmt = v => v == null ? '—' : new Intl.NumberFormat('pt-PT', {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
+const fmt = v => privacyMode ? '••••' : _fmt(v);
+const _fmtShort = v => { if (!v) return '0€'; return v >= 1000 ? (v/1000).toFixed(1)+'k€' : Math.round(v)+'€'; };
+const fmtShort = v => privacyMode ? '••••' : _fmtShort(v);
 const dtLabel = d => {
   const b = d.replace('b','');
   const [y,m] = b.split('-');
@@ -2237,6 +2241,24 @@ function renderCasaTab() {
         <div style="font-size:24px;font-weight:800;color:${aindaFalta<=0?'var(--green)':'var(--red)'}">${aindaFalta<=0?'Parabéns!':fmt(aindaFalta)}</div>
       </div>
     </div>`;
+}
+
+// ── Modo Privacidade ─────────────────────────────────────────
+function togglePrivacy() {
+  privacyMode = !privacyMode;
+  const btn = document.getElementById('privacy-btn');
+  btn.textContent = privacyMode ? '🙈' : '👁️';
+  btn.title       = privacyMode ? 'Mostrar valores' : 'Esconder valores';
+  btn.style.background = privacyMode ? 'rgba(108,99,255,.3)' : '';
+
+  // Re-renderiza o tab atual
+  if (activeTab === 'dashboard') initDashboard();
+  if (activeTab === 'evolucao')  { initEvolucao(); initYearCompare(); }
+  if (activeTab === 'ativos')    initAtivos();
+  if (activeTab === 'ines')      initPerson('ines');
+  if (activeTab === 'dany')      initPerson('dany');
+  if (activeTab === 'casa')      { renderCasaTab(); calcSimulador(); calcCenario(); }
+  if (activeTab === 'casamento') renderWeddingTab();
 }
 
 // ── Navigation ────────────────────────────────────────────────
