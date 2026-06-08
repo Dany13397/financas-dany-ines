@@ -1219,7 +1219,8 @@ async function syncFromExcel() {
       'Dinheiro investido individual (não possível casa)'
     ]);
 
-    let novos = 0, atualizados = 0;
+    const relatorio = [];
+
     for (const mc of mesesCols) {
       const assets = {}, summary = {};
       for (const row of rows.slice(5)) {
@@ -1238,13 +1239,29 @@ async function syncFromExcel() {
         }
       }
 
-      // Só guardar se tiver dados suficientes
       const numAtivos = Object.keys(assets).length;
       if (numAtivos < 3) continue;
 
       const jaExistia = datasExistentes.has(mc.date);
+      const entradaAnterior = allData.find(d => d.date === mc.date);
+
+      // Calcular diferenças ativo a ativo
+      const diffs = [];
+      const todosAtivos = new Set([...Object.keys(assets), ...(entradaAnterior ? Object.keys(entradaAnterior.assets || {}) : [])]);
+      todosAtivos.forEach(k => {
+        const novoI = assets[k]?.ines ?? null;
+        const novoD = assets[k]?.dany ?? null;
+        const antI  = entradaAnterior?.assets?.[k]?.ines ?? null;
+        const antD  = entradaAnterior?.assets?.[k]?.dany ?? null;
+        const mudouI = novoI !== antI;
+        const mudouD = novoD !== antD;
+        if (mudouI || mudouD) {
+          diffs.push({ ativo: k, antI, antD, novoI, novoD, mudouI, mudouD });
+        }
+      });
+
       const { error } = await sb.from('entries').upsert({ date: mc.date, assets, summary }, { onConflict: 'date' });
-      if (!error) { jaExistia ? atualizados++ : novos++; }
+      if (!error) relatorio.push({ date: mc.date, novo: !jaExistia, diffs });
     }
 
     await fetchData();
@@ -1252,17 +1269,80 @@ async function syncFromExcel() {
     if (activeTab === 'evolucao') initEvolucao();
     if (activeTab === 'ativos')   initAtivos();
 
-    const partes = [];
-    if (novos > 0)       partes.push(`${novos} novo${novos > 1 ? 's' : ''}`);
-    if (atualizados > 0) partes.push(`${atualizados} atualizado${atualizados > 1 ? 's' : ''}`);
-    label.textContent = partes.length > 0 ? `✅ ${partes.join(', ')}` : '✅ Já atualizado';
-    setTimeout(() => { label.textContent = 'Sync Excel'; btn.disabled = false; }, 3000);
+    label.textContent = '✅ Sync concluído';
+    setTimeout(() => { label.textContent = 'Sync Excel'; btn.disabled = false; }, 4000);
+
+    mostrarRelatorioSync(relatorio);
 
   } catch (e) {
     console.error('[syncFromExcel]', e);
     label.textContent = '❌ Erro no sync';
     setTimeout(() => { label.textContent = 'Sync Excel'; btn.disabled = false; }, 3000);
   }
+}
+
+function mostrarRelatorioSync(relatorio) {
+  const fv = v => v != null ? _fmt(v) : '—';
+
+  let corpo = '';
+  if (!relatorio.length) {
+    corpo = '<p style="color:var(--text2);font-size:14px;text-align:center;padding:16px 0">Nenhuma alteração encontrada — tudo já estava atualizado.</p>';
+  } else {
+    for (const r of relatorio) {
+      const tag = r.novo
+        ? '<span style="background:#43d68a22;color:#43d68a;font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600">NOVO</span>'
+        : '<span style="background:#6c63ff22;color:#6c63ff;font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600">ATUALIZADO</span>';
+
+      let linhas = '';
+      if (!r.diffs.length) {
+        linhas = '<tr><td colspan="3" style="color:var(--text2);font-size:12px;padding:6px 0">Sem alterações nos ativos.</td></tr>';
+      } else {
+        for (const d of r.diffs) {
+          const celulaI = d.mudouI
+            ? `<span style="color:var(--text2);text-decoration:line-through;font-size:11px">${fv(d.antI)}</span> → <strong style="color:#43d68a">${fv(d.novoI)}</strong>`
+            : `<span style="color:var(--text2)">${fv(d.novoI)}</span>`;
+          const celulaD = d.mudouD
+            ? `<span style="color:var(--text2);text-decoration:line-through;font-size:11px">${fv(d.antD)}</span> → <strong style="color:#43d68a">${fv(d.novoD)}</strong>`
+            : `<span style="color:var(--text2)">${fv(d.novoD)}</span>`;
+          linhas += `<tr>
+            <td style="padding:5px 8px 5px 0;font-size:13px;color:var(--text)">${d.ativo}</td>
+            <td style="padding:5px 8px;font-size:13px;text-align:right">${celulaI}</td>
+            <td style="padding:5px 0 5px 8px;font-size:13px;text-align:right">${celulaD}</td>
+          </tr>`;
+        }
+      }
+
+      corpo += `
+        <div style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:15px;font-weight:700;color:var(--text)">${dtLabel(r.date)}</span>
+            ${tag}
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="font-size:11px;color:var(--text2);text-align:left;padding-bottom:4px">Ativo</th>
+              <th style="font-size:11px;color:var(--ines);text-align:right;padding-bottom:4px">Inês</th>
+              <th style="font-size:11px;color:var(--dany);text-align:right;padding-bottom:4px">Dany</th>
+            </tr></thead>
+            <tbody>${linhas}</tbody>
+          </table>
+        </div>`;
+    }
+  }
+
+  // Modal
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border)">
+        <span style="font-size:16px;font-weight:700;color:var(--text)">🔄 Relatório do Sync</span>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1">✕</button>
+      </div>
+      <div style="overflow-y:auto;padding:20px;flex:1">${corpo}</div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 }
 
 // ── Charts ────────────────────────────────────────────────────
