@@ -68,6 +68,10 @@
   .card-sub.up{color:var(--green);}
   .card-sub.down{color:var(--red);}
 
+  /* ── Info button ── */
+  .info-btn{background:none;border:none;color:var(--text2);font-size:14px;cursor:pointer;padding:0 0 0 6px;line-height:1;opacity:.6;transition:opacity .15s;flex-shrink:0;}
+  .info-btn:hover{opacity:1;color:var(--accent);}
+  .chart-title,.card-title-row{display:flex;justify-content:space-between;align-items:center;}
   /* ── Progress ── */
   .progress-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
   .progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
@@ -921,6 +925,99 @@ const dtLabel = d => {
   return (ms[parseInt(m)-1]||m)+' '+y.slice(2);
 };
 
+// ── Info buttons ─────────────────────────────────────────────
+function showInfo(title, desc) {
+  const existing = document.getElementById('info-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'info-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:380px;padding:22px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <span style="font-size:15px;font-weight:700;color:var(--text);line-height:1.3">${title}</span>
+        <button onclick="document.getElementById('info-modal').remove()" style="background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:0;margin-left:12px;line-height:1">✕</button>
+      </div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0">${desc}</p>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+let _infoBtnsAdded = false;
+function initInfoButtons() {
+  if (_infoBtnsAdded) return;
+  _infoBtnsAdded = true;
+
+  const defs = [
+    // Dashboard
+    ['chart-dash-total', 'Evolução do Patrimônio (últimos 12 meses)',
+      'Mostra como o patrimônio total conjunto (Inês + Dany) evoluiu nos últimos 12 meses registados.'],
+    // Evolução
+    ['chart-total-time', 'Patrimônio Total ao Longo do Tempo',
+      'Evolução do valor total de todos os ativos de Inês e Dany combinados. Permite ver a tendência de crescimento global do vosso patrimônio.'],
+    ['chart-casa-time', 'Dinheiro para Casa vs Objetivo',
+      'Evolução do dinheiro disponível para comprar casa — inclui contas à ordem, poupança, conjunta e certificados de aforro. Exclui PPR, ações e outros investimentos de longo prazo que não podem ser facilmente mobilizados. A linha vermelha tracejada é o vosso objetivo.'],
+    ['chart-individual-time', 'Evolução Individual — Inês vs Dany',
+      'Compara a evolução do patrimônio total de cada um ao longo do tempo. Útil para perceber quem está a crescer mais rápido e identificar diferenças nas estratégias de poupança.'],
+    ['chart-monthly-delta', 'Variação Mensal do Patrimônio',
+      'Quanto o patrimônio total variou de mês para mês. Barras verdes indicam crescimento, vermelhas indicam queda. Permite identificar os meses de maior ou menor poupança.'],
+    ['chart-year-compare', 'Comparação Anual',
+      'Compara o dinheiro para casa mês a mês entre diferentes anos (Jan, Fev, Mar...). Útil para perceber se estão a poupar mais ou menos do que no ano anterior no mesmo período.'],
+    ['chart-stacked-assets', 'Composição do Patrimônio — Barras Empilhadas',
+      'Mostra como o patrimônio total é composto pelos diferentes ativos ao longo do tempo. Cada cor representa um ativo diferente. Permite ver quais ativos cresceram mais e como a composição foi mudando.'],
+    // Ativos
+    ['chart-assets-bar', 'Ativos por Pessoa',
+      'Valor atual de cada ativo, dividido entre Inês (rosa) e Dany (roxo). Útil para comparar a exposição de cada um a cada tipo de ativo.'],
+    ['chart-pie-ines', 'Distribuição de Ativos — Inês',
+      'Como o patrimônio atual da Inês está distribuído pelos diferentes ativos, em percentagem. Permite avaliar a diversificação.'],
+    ['chart-pie-dany', 'Distribuição de Ativos — Dany',
+      'Como o patrimônio atual do Dany está distribuído pelos diferentes ativos, em percentagem. Permite avaliar a diversificação.'],
+    ['asset-table-body', 'Detalhe de Ativos',
+      'Valor atual de cada ativo para Inês e Dany separadamente, com o total combinado. A linha Total mostra o somatório de cada coluna.'],
+    ['perf-table-body', 'Performance dos Investimentos',
+      'Compara o valor de cada ativo no mês anterior com o mês atual, mostrando o ganho/perda em euros e em percentagem. A coluna <strong>CAGR/ano</strong> mostra o retorno anualizado desde o primeiro registo histórico desse ativo — equivale a dizer "se tivesse crescido a esta taxa todos os anos, chegaria ao valor atual".'],
+    // Inês
+    ['chart-pi-time', 'Evolução — Inês',
+      'Evolução do patrimônio total da Inês (linha rosa) e da parte destinada à casa (linha amarela) ao longo do tempo.'],
+    ['chart-pi-split', 'Total vs Casa — Inês',
+      'Divide o patrimônio da Inês em duas categorias: dinheiro disponível para casa (contas + certificados) e investimentos de longo prazo que não podem ser facilmente mobilizados (PPR, ações, etc.).'],
+    ['chart-pi-pie', 'Distribuição de Ativos — Inês',
+      'Como o patrimônio atual da Inês está distribuído pelos diferentes ativos.'],
+    ['pi-table', 'Ativos — Inês',
+      'Valor e percentagem de cada ativo no total do patrimônio da Inês. A percentagem é relativa ao total dela.'],
+    ['pi-perf-table', 'Performance dos Investimentos — Inês',
+      'Compara o valor de cada ativo da Inês no mês anterior com o mês atual. A coluna <strong>CAGR/ano</strong> mostra o retorno anualizado desde o primeiro registo desse ativo para a Inês.'],
+    // Dany
+    ['chart-pd-time', 'Evolução — Dany',
+      'Evolução do patrimônio total do Dany (linha roxa) e da parte destinada à casa (linha amarela) ao longo do tempo.'],
+    ['chart-pd-split', 'Total vs Casa — Dany',
+      'Divide o patrimônio do Dany em duas categorias: dinheiro disponível para casa e investimentos de longo prazo.'],
+    ['chart-pd-pie', 'Distribuição de Ativos — Dany',
+      'Como o patrimônio atual do Dany está distribuído pelos diferentes ativos.'],
+    ['pd-table', 'Ativos — Dany',
+      'Valor e percentagem de cada ativo no total do patrimônio do Dany.'],
+    ['pd-perf-table', 'Performance dos Investimentos — Dany',
+      'Compara o valor de cada ativo do Dany no mês anterior com o mês atual. A coluna <strong>CAGR/ano</strong> mostra o retorno anualizado desde o primeiro registo desse ativo para o Dany.'],
+  ];
+
+  defs.forEach(([id, title, desc]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const card = el.closest('.chart-card');
+    if (!card) return;
+    // Encontrar o elemento título (chart-title ou primeiro div filho)
+    const titleEl = card.querySelector('.chart-title') || card.firstElementChild;
+    if (!titleEl || titleEl.querySelector('.info-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'info-btn';
+    btn.innerHTML = 'ⓘ';
+    btn.title = 'Saber mais';
+    btn.onclick = e => { e.stopPropagation(); showInfo(title, desc); };
+    titleEl.appendChild(btn);
+  });
+}
+
 // ── Filtro de datas dos gráficos ─────────────────────────────
 let chartFiltro = 'all';
 
@@ -1480,6 +1577,7 @@ function initDashboard() {
     ? `Faltam ${fmt(falta)} · escritura ${fmt(naEscritura)} + casamento ${fmt(weddingNet)}${extrasCasa>0?' + extras '+fmt(extrasCasa):''}`
     : '🎉 Objetivo atingido!';
   document.getElementById('last-update').textContent = 'Último registo: '+dtLabel(last.date);
+  initInfoButtons();
 
   // Previsão rápida para o card de progresso (últimos 6 meses)
   const casaValsP = allData.slice(-7).map(d => d.summary?.['Dinheiro total possivel casa']?.ines || 0);
