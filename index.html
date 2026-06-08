@@ -390,6 +390,10 @@
         <div class="chart-title">Comparar Anos <small>patrimônio para casa mês a mês</small></div>
         <div class="chart-wrap"><canvas id="chart-year-compare"></canvas></div>
       </div>
+      <div class="chart-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">📝 Notas dos Meses</div>
+        <div id="notas-historico"></div>
+      </div>
     </div>
 
     <!-- ATIVOS -->
@@ -783,6 +787,14 @@
           <div class="form-group"><label>CGD Pensões — Inês</label><input type="number" id="f-cgd-ines" placeholder="0.00" step="0.01"></div>
         </div>
       </div>
+      <div class="form-section">
+        <h3>📝 Nota do Mês</h3>
+        <div class="form-group">
+          <label>Observações (opcional)</label>
+          <textarea id="f-nota" placeholder="ex: Recebi bónus, paguei carro, viagem a Paris..." rows="3"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;outline:none;width:100%;resize:vertical;font-family:inherit"></textarea>
+        </div>
+      </div>
       <button class="btn" id="btn-save" onclick="saveEntry()">💾 Guardar Registo</button>
       <div class="success-msg" id="save-success">✅ Registo guardado!</div>
       <div class="error-msg" id="save-error">❌ Erro ao guardar. Tenta de novo.</div>
@@ -1045,7 +1057,7 @@ async function fetchData() {
 async function fetchEntriesFromDB() {
   const { data, error } = await sb.from('entries').select('*').order('date', {ascending:true});
   if (!error && data) {
-    allData = data.map(r => ({ date: r.date, assets: r.assets, summary: r.summary }));
+    allData = data.map(r => ({ date: r.date, assets: r.assets, summary: r.summary, nota: r.nota || '' }));
     cacheSet(CACHE_ENTRIES, allData);
   }
 }
@@ -1116,7 +1128,8 @@ async function saveEntry() {
     'Dinheiro possivel casa individual':{ ines: casaInes, dany: casaDany }
   };
 
-  const { error } = await sb.from('entries').upsert({ date, assets, summary }, { onConflict: 'date' });
+  const nota = document.getElementById('f-nota').value.trim();
+  const { error } = await sb.from('entries').upsert({ date, assets, summary, nota }, { onConflict: 'date' });
 
   btn.disabled = false; btn.textContent = '💾 Guardar Registo';
   if (error) {
@@ -1255,6 +1268,19 @@ function initEvolucao() {
 
   const deltas = allData.slice(1).map((d,i) => (d.summary?.['Total juntos']?.ines||0) - (allData[i].summary?.['Total juntos']?.ines||0));
   mkChart('chart-monthly-delta',{ type:'bar', data:{ labels:allData.slice(1).map(d=>dtLabel(d.date)), datasets:[{ label:'Variação Mensal', data:deltas, backgroundColor:deltas.map(v=>v>=0?'rgba(67,214,138,.8)':'rgba(239,83,80,.8)'), borderRadius:4 }]}, options:{...baseOpts, plugins:{...baseOpts.plugins, tooltip:{ callbacks:{ label: c=>' '+fmt(c.raw) }}}}});
+
+  // Notas do histórico
+  const comNotas = allData.filter(d => d.nota?.trim());
+  const notasEl  = document.getElementById('notas-historico');
+  if (notasEl) {
+    notasEl.innerHTML = comNotas.length === 0
+      ? '<p style="color:var(--text2);font-size:13px">Ainda não há notas registadas.</p>'
+      : comNotas.map(d => `
+        <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap;min-width:52px">${dtLabel(d.date)}</span>
+          <span style="font-size:13px;color:var(--text)">${d.nota}</span>
+        </div>`).join('');
+  }
 }
 
 // ── Ativos ────────────────────────────────────────────────────
@@ -1737,13 +1763,18 @@ function renderGuestTab() {
     const list = guests[c.key] || [];
     const rows = list.length
       ? list.map((p, i) => `
-        <div style="display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:6px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
-          <span style="font-size:13px">${p.nome}</span>
-          ${tipoBadge(p.tipo)}
-          <span onclick="togglePresenca('${c.key}',${i})" style="cursor:pointer" title="Clica para mudar">${presencaBadge(p.presenca||'pendente')}</span>
-          <button onclick="moveGuest('${c.key}',${i},-1)" ${i===0?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===0?'.3':'1'}">▲</button>
-          <button onclick="moveGuest('${c.key}',${i},1)"  ${i===list.length-1?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===list.length-1?'.3':'1'}">▼</button>
-          <button onclick="removeGuest('${c.key}',${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;line-height:1">✕</button>
+        <div style="padding:9px 0;border-bottom:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:6px;align-items:center">
+            <span style="font-size:13px">${p.nome}</span>
+            ${tipoBadge(p.tipo)}
+            <span onclick="togglePresenca('${c.key}',${i})" style="cursor:pointer" title="Clica para mudar">${presencaBadge(p.presenca||'pendente')}</span>
+            <button onclick="moveGuest('${c.key}',${i},-1)" ${i===0?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===0?'.3':'1'}">▲</button>
+            <button onclick="moveGuest('${c.key}',${i},1)"  ${i===list.length-1?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===list.length-1?'.3':'1'}">▼</button>
+            <button onclick="removeGuest('${c.key}',${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;line-height:1">✕</button>
+          </div>
+          <input type="text" value="${(p.obs||'').replace(/"/g,'&quot;')}" placeholder="Observações (alergias, necessidades...)"
+            onchange="updateGuestObs('${c.key}',${i},this.value)"
+            style="margin-top:4px;width:100%;background:transparent;border:none;border-bottom:1px dashed var(--border);color:var(--text2);font-size:11px;padding:3px 0;outline:none;${p.obs?'color:var(--text)':''}">
         </div>`).join('')
       : '<p style="font-size:12px;color:var(--text2);padding:8px 0">Sem convidados.</p>';
 
@@ -2478,6 +2509,10 @@ function exportPDF() {
 // ── Init form date ────────────────────────────────────────────
 const now = new Date();
 document.getElementById('f-date').value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+document.getElementById('f-date').addEventListener('change', function() {
+  const existing = allData.find(d => d.date === this.value);
+  document.getElementById('f-nota').value = existing?.nota || '';
+});
 
 // ── Simulador de Crédito ─────────────────────────────────────
 function calcSimulador() {
