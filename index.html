@@ -353,7 +353,7 @@
 
       <div class="chart-card" id="savings-rate-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div style="font-size:14px;font-weight:600">📈 Taxa de Poupança</div>
+          <div style="font-size:14px;font-weight:600" class="chart-title">📈 Taxa de Poupança</div>
           <button onclick="exportPDF()" class="btn btn-sm btn-outline" style="margin-top:0;font-size:12px">📄 Exportar PDF</button>
           <button onclick="partilharResumo()" class="btn btn-sm btn-outline" style="margin-top:0;font-size:12px">📸 Partilhar</button>
         </div>
@@ -953,7 +953,40 @@ function initInfoButtons() {
   // Para gráficos/tabelas: id é o canvas ou tbody → sobe a .chart-card
   // Para cards de valor: id é o elemento do valor → sobe a .card, usa .card-label
   const defs = [
-    // ── Dashboard ──────────────────────────────────────────────
+    // ── Dashboard — KPI cards ──────────────────────────────────
+    ['kpi-total', 'Patrimônio Total',
+      'Soma de todos os ativos de Inês e Dany: contas, poupanças, certificados, investimentos e outros. É o valor bruto total do vosso patrimônio conjunto.'],
+    ['kpi-casa', 'Patrimônio Líquido (Para Casa)',
+      'Dinheiro diretamente disponível para a compra de casa: contas à ordem + poupança + conta conjunta + certificados de aforro. Exclui investimentos de longo prazo como PPR, ações e Trade Republic.'],
+    ['kpi-ines', 'Total Inês',
+      'Patrimônio total da Inês — soma de todos os seus ativos individuais e a sua parte nos ativos conjuntos.'],
+    ['kpi-dany', 'Total Dany',
+      'Patrimônio total do Dany — soma de todos os seus ativos individuais e a sua parte nos ativos conjuntos.'],
+    // ── Dashboard — progress card ──────────────────────────────
+    ['progress-pct', 'Progresso para Casa',
+      'Percentagem do objetivo total já atingida. O objetivo = escritura (preço − crédito − já pago) + casamento líquido (custos − prendas) + extras de casa. A barra enche à medida que o dinheiro para casa cresce.'],
+    // ── Dashboard — person cards ───────────────────────────────
+    ['person-ines-total', 'Resumo — Inês',
+      'Visão geral do patrimônio da Inês: total, quanto está destinado à casa, e a divisão entre dinheiro líquido (mobilizável) e investimentos de longo prazo.'],
+    ['person-dany-total', 'Resumo — Dany',
+      'Visão geral do patrimônio do Dany: total, quanto está destinado à casa, e a divisão entre dinheiro líquido (mobilizável) e investimentos de longo prazo.'],
+    // ── Dashboard — sub-items das person cards ─────────────────
+    ['dash-ines-liquido', 'Líquido — Inês',
+      'Dinheiro da Inês disponível para casa: contas à ordem + poupança + conta conjunta + certificados de aforro. Este valor é mobilizável a curto prazo.'],
+    ['dash-ines-investido', 'Investido — Inês',
+      'Dinheiro da Inês em investimentos de longo prazo (PPR, ações Accenture, Trade Republic carteira, DEGIRO, XTB, CGD Pensões). Não está facilmente acessível para a casa.'],
+    ['dash-dany-liquido', 'Líquido — Dany',
+      'Dinheiro do Dany disponível para casa: contas à ordem + poupança + certificados de aforro. Este valor é mobilizável a curto prazo.'],
+    ['dash-dany-investido', 'Investido — Dany',
+      'Dinheiro do Dany em investimentos de longo prazo (PPR, ações, Trade Republic carteira, DEGIRO, XTB, Trust Wallet). Não está facilmente acessível para a casa.'],
+    // ── Dashboard — savings rate card ─────────────────────────
+    ['sr-media', 'Poupança Média por Mês',
+      'Média do crescimento mensal do dinheiro para casa nos últimos 6 meses. Calculado como a média das variações mensais do campo "Dinheiro total possível para casa".'],
+    ['sr-necessario', 'Necessário por Mês',
+      'Quanto precisam de poupar por mês para atingir o objetivo até ao dia do casamento (16 Jul 2027). Calculado dividindo o valor em falta pelo número de meses restantes.'],
+    ['sr-previsao', 'Previsão ao Ritmo Atual',
+      'Data estimada em que atingirão o objetivo se mantiverem o ritmo de poupança médio dos últimos 6 meses. Verde = antes do casamento, vermelho = depois.'],
+    // ── Dashboard — chart ──────────────────────────────────────
     ['chart-dash-total', 'Evolução do Patrimônio (últimos 12 meses)',
       'Mostra como o patrimônio total conjunto (Inês + Dany) evoluiu nos últimos 12 meses registados.'],
     // ── Evolução ───────────────────────────────────────────────
@@ -1077,36 +1110,59 @@ function initInfoButtons() {
       'Valor médio de cada prenda (total recebido ÷ número de prendas).'],
   ];
 
+  const mkBtn = (title, desc) => {
+    const btn = document.createElement('button');
+    btn.className = 'info-btn'; btn.innerHTML = 'ⓘ'; btn.title = 'Saber mais';
+    btn.onclick = e => { e.stopPropagation(); showInfo(title, desc); };
+    return btn;
+  };
+
+  const injectInto = (labelEl, title, desc, small = false) => {
+    if (!labelEl || labelEl.querySelector('.info-btn')) return;
+    labelEl.style.display = 'flex';
+    labelEl.style.justifyContent = 'space-between';
+    labelEl.style.alignItems = 'center';
+    const btn = mkBtn(title, desc);
+    if (small) btn.style.fontSize = '11px';
+    labelEl.appendChild(btn);
+  };
+
   defs.forEach(([id, title, desc]) => {
     const el = document.getElementById(id);
     if (!el) return;
 
-    // 1. Tentar chart-card (gráficos e tabelas)
+    // 1. chart-card (gráficos e tabelas)
     const chartCard = el.closest('.chart-card');
     if (chartCard) {
       const titleEl = chartCard.querySelector('.chart-title') || chartCard.firstElementChild;
-      if (!titleEl || titleEl.querySelector('.info-btn')) return;
-      const btn = document.createElement('button');
-      btn.className = 'info-btn'; btn.innerHTML = 'ⓘ'; btn.title = 'Saber mais';
-      btn.onclick = e => { e.stopPropagation(); showInfo(title, desc); };
-      titleEl.appendChild(btn);
+      injectInto(titleEl, title, desc);
       return;
     }
 
-    // 2. Cards de valor — sobe a .card, usa .card-label
+    // 2. .card (cards normais com .card-label)
     const cardEl = el.closest('.card');
     if (cardEl) {
-      const labelEl = cardEl.querySelector('.card-label');
-      if (!labelEl || labelEl.querySelector('.info-btn')) return;
-      labelEl.style.display = 'flex';
-      labelEl.style.justifyContent = 'space-between';
-      labelEl.style.alignItems = 'center';
-      const btn = document.createElement('button');
-      btn.className = 'info-btn'; btn.innerHTML = 'ⓘ'; btn.title = 'Saber mais';
-      btn.style.fontSize = '12px';
-      btn.onclick = e => { e.stopPropagation(); showInfo(title, desc); };
-      labelEl.appendChild(btn);
+      injectInto(cardEl.querySelector('.card-label'), title, desc, true);
+      return;
     }
+
+    // 3. .progress-card (card de progresso — usa .progress-title)
+    const progressCard = el.closest('.progress-card');
+    if (progressCard) {
+      injectInto(progressCard.querySelector('.progress-title'), title, desc);
+      return;
+    }
+
+    // 4. .person-card (cards das pessoas — usa .person-name)
+    const personCard = el.closest('.person-card');
+    if (personCard) {
+      injectInto(personCard.querySelector('.person-name'), title, desc);
+      return;
+    }
+
+    // 5. Sub-items sem container padrão — label é o previousElementSibling do valor
+    const labelEl = el.previousElementSibling;
+    if (labelEl) injectInto(labelEl, title, desc, true);
   });
 }
 
