@@ -946,75 +946,167 @@ function showInfo(title, desc) {
 
 let _infoBtnsAdded = false;
 function initInfoButtons() {
-  if (_infoBtnsAdded) return;
+  if (_infoBtnsAdded) return; // idempotente — botões já inseridos
   _infoBtnsAdded = true;
 
+  // [id, title, desc]
+  // Para gráficos/tabelas: id é o canvas ou tbody → sobe a .chart-card
+  // Para cards de valor: id é o elemento do valor → sobe a .card, usa .card-label
   const defs = [
-    // Dashboard
+    // ── Dashboard ──────────────────────────────────────────────
     ['chart-dash-total', 'Evolução do Patrimônio (últimos 12 meses)',
       'Mostra como o patrimônio total conjunto (Inês + Dany) evoluiu nos últimos 12 meses registados.'],
-    // Evolução
+    // ── Evolução ───────────────────────────────────────────────
     ['chart-total-time', 'Patrimônio Total ao Longo do Tempo',
       'Evolução do valor total de todos os ativos de Inês e Dany combinados. Permite ver a tendência de crescimento global do vosso patrimônio.'],
     ['chart-casa-time', 'Dinheiro para Casa vs Objetivo',
-      'Evolução do dinheiro disponível para comprar casa — inclui contas à ordem, poupança, conjunta e certificados de aforro. Exclui PPR, ações e outros investimentos de longo prazo que não podem ser facilmente mobilizados. A linha vermelha tracejada é o vosso objetivo.'],
+      'Evolução do dinheiro disponível para comprar casa — inclui contas à ordem, poupança, conjunta e certificados de aforro. Exclui PPR, ações e outros investimentos de longo prazo. A linha vermelha tracejada é o vosso objetivo.'],
     ['chart-individual-time', 'Evolução Individual — Inês vs Dany',
-      'Compara a evolução do patrimônio total de cada um ao longo do tempo. Útil para perceber quem está a crescer mais rápido e identificar diferenças nas estratégias de poupança.'],
+      'Compara a evolução do patrimônio total de cada um ao longo do tempo. Útil para perceber diferenças nas estratégias de poupança.'],
     ['chart-monthly-delta', 'Variação Mensal do Patrimônio',
-      'Quanto o patrimônio total variou de mês para mês. Barras verdes indicam crescimento, vermelhas indicam queda. Permite identificar os meses de maior ou menor poupança.'],
+      'Quanto o patrimônio total variou de mês para mês. Verde = crescimento, vermelho = queda.'],
     ['chart-year-compare', 'Comparação Anual',
-      'Compara o dinheiro para casa mês a mês entre diferentes anos (Jan, Fev, Mar...). Útil para perceber se estão a poupar mais ou menos do que no ano anterior no mesmo período.'],
+      'Compara o dinheiro para casa mês a mês entre diferentes anos. Útil para ver se estão a poupar mais ou menos do que no ano anterior.'],
     ['chart-stacked-assets', 'Composição do Patrimônio — Barras Empilhadas',
-      'Mostra como o patrimônio total é composto pelos diferentes ativos ao longo do tempo. Cada cor representa um ativo diferente. Permite ver quais ativos cresceram mais e como a composição foi mudando.'],
-    // Ativos
+      'Mostra como o patrimônio total é composto pelos diferentes ativos ao longo do tempo. Cada cor é um ativo diferente. Permite ver quais cresceram mais e como a composição foi mudando.'],
+    // ── Ativos ─────────────────────────────────────────────────
     ['chart-assets-bar', 'Ativos por Pessoa',
-      'Valor atual de cada ativo, dividido entre Inês (rosa) e Dany (roxo). Útil para comparar a exposição de cada um a cada tipo de ativo.'],
+      'Valor atual de cada ativo, dividido entre Inês (rosa) e Dany (roxo).'],
     ['chart-pie-ines', 'Distribuição de Ativos — Inês',
-      'Como o patrimônio atual da Inês está distribuído pelos diferentes ativos, em percentagem. Permite avaliar a diversificação.'],
+      'Como o patrimônio atual da Inês está distribuído pelos diferentes ativos, em percentagem.'],
     ['chart-pie-dany', 'Distribuição de Ativos — Dany',
-      'Como o patrimônio atual do Dany está distribuído pelos diferentes ativos, em percentagem. Permite avaliar a diversificação.'],
+      'Como o patrimônio atual do Dany está distribuído pelos diferentes ativos, em percentagem.'],
     ['asset-table-body', 'Detalhe de Ativos',
-      'Valor atual de cada ativo para Inês e Dany separadamente, com o total combinado. A linha Total mostra o somatório de cada coluna.'],
+      'Valor atual de cada ativo para Inês e Dany separadamente, com o total combinado.'],
     ['perf-table-body', 'Performance dos Investimentos',
-      'Compara o valor de cada ativo no mês anterior com o mês atual, mostrando o ganho/perda em euros e em percentagem. A coluna <strong>CAGR/ano</strong> mostra o retorno anualizado desde o primeiro registo histórico desse ativo — equivale a dizer "se tivesse crescido a esta taxa todos os anos, chegaria ao valor atual".'],
-    // Inês
+      'Compara o valor de cada ativo no mês anterior com o atual. A coluna <strong>CAGR/ano</strong> mostra o retorno anualizado desde o primeiro registo histórico desse ativo — equivale a dizer "se tivesse crescido a esta taxa todos os anos, chegaria ao valor atual".'],
+    // ── Inês ───────────────────────────────────────────────────
     ['chart-pi-time', 'Evolução — Inês',
-      'Evolução do patrimônio total da Inês (linha rosa) e da parte destinada à casa (linha amarela) ao longo do tempo.'],
+      'Evolução do patrimônio total da Inês (rosa) e da parte destinada à casa (amarelo) ao longo do tempo.'],
     ['chart-pi-split', 'Total vs Casa — Inês',
-      'Divide o patrimônio da Inês em duas categorias: dinheiro disponível para casa (contas + certificados) e investimentos de longo prazo que não podem ser facilmente mobilizados (PPR, ações, etc.).'],
+      'Divide o patrimônio da Inês entre dinheiro disponível para casa (contas + certificados) e investimentos de longo prazo não mobilizáveis (PPR, ações, etc.).'],
     ['chart-pi-pie', 'Distribuição de Ativos — Inês',
       'Como o patrimônio atual da Inês está distribuído pelos diferentes ativos.'],
     ['pi-table', 'Ativos — Inês',
-      'Valor e percentagem de cada ativo no total do patrimônio da Inês. A percentagem é relativa ao total dela.'],
-    ['pi-perf-table', 'Performance dos Investimentos — Inês',
-      'Compara o valor de cada ativo da Inês no mês anterior com o mês atual. A coluna <strong>CAGR/ano</strong> mostra o retorno anualizado desde o primeiro registo desse ativo para a Inês.'],
-    // Dany
+      'Valor e percentagem de cada ativo no total do patrimônio da Inês.'],
+    ['pi-perf-table', 'Performance — Inês',
+      'Compara cada ativo da Inês no mês anterior vs atual. <strong>CAGR/ano</strong> = retorno anualizado desde o primeiro registo desse ativo.'],
+    // ── Dany ───────────────────────────────────────────────────
     ['chart-pd-time', 'Evolução — Dany',
-      'Evolução do patrimônio total do Dany (linha roxa) e da parte destinada à casa (linha amarela) ao longo do tempo.'],
+      'Evolução do patrimônio total do Dany (roxo) e da parte destinada à casa (amarelo) ao longo do tempo.'],
     ['chart-pd-split', 'Total vs Casa — Dany',
-      'Divide o patrimônio do Dany em duas categorias: dinheiro disponível para casa e investimentos de longo prazo.'],
+      'Divide o patrimônio do Dany entre dinheiro disponível para casa e investimentos de longo prazo.'],
     ['chart-pd-pie', 'Distribuição de Ativos — Dany',
       'Como o patrimônio atual do Dany está distribuído pelos diferentes ativos.'],
     ['pd-table', 'Ativos — Dany',
       'Valor e percentagem de cada ativo no total do patrimônio do Dany.'],
-    ['pd-perf-table', 'Performance dos Investimentos — Dany',
-      'Compara o valor de cada ativo do Dany no mês anterior com o mês atual. A coluna <strong>CAGR/ano</strong> mostra o retorno anualizado desde o primeiro registo desse ativo para o Dany.'],
+    ['pd-perf-table', 'Performance — Dany',
+      'Compara cada ativo do Dany no mês anterior vs atual. <strong>CAGR/ano</strong> = retorno anualizado desde o primeiro registo desse ativo.'],
+    // ── Casa — cards ───────────────────────────────────────────
+    ['casa-preco', 'Preço Total da Casa',
+      'Valor total de compra da casa, definido nos Detalhes da Casa.'],
+    ['casa-pago', 'Já Pago / Sinal',
+      'Montante já entregue ao promotor ou banco (sinal, reforços de sinal, etc.).'],
+    ['casa-extras-total', 'Total Extras',
+      'Soma estimada de todas as despesas adicionais ligadas à casa: obras, mobiliário, eletrodomésticos, etc.'],
+    ['casa-goal-display', 'Objetivo de Poupança',
+      'Valor calculado automaticamente: escritura (preço − crédito − já pago) + casamento líquido + extras. É este valor que aparece na barra de progresso do dashboard.'],
+    // ── Casa — gráficos/cards ──────────────────────────────────
+    ['chart-casa-evolucao', 'Evolução das Poupanças para Casa',
+      'Mostra a evolução do dinheiro disponível para a casa ao longo do tempo, com uma linha de projeção baseada no ritmo de poupança atual.'],
+    ['cenario-result', 'Cenário: E se pouparem mais?',
+      'Simula quanto tempo faria diferença poupar um valor extra por mês. Move o slider para ver como cada incremento avança a data prevista para atingir o objetivo.'],
+    ['casa-resumo-body', 'Resumo de Custos',
+      'Breakdown detalhado de todos os custos associados à casa: escritura, crédito, extras e casamento. Mostra o que falta pagar e o total necessário.'],
+    // ── Casamento — cards Detalhes ─────────────────────────────
+    ['w-total', 'Total do Casamento',
+      'Soma de todos os itens do casamento com custo definido (inclui orçamentados e por definir).'],
+    ['w-dias', 'Dias para o Casamento',
+      'Contagem decrescente até ao dia do casamento (16 de Julho de 2027).'],
+    ['w-orcamentado', 'Já Orçamentado',
+      'Valor total dos itens do casamento que já têm um custo definido. A percentagem indica quanto do total já foi orçamentado.'],
+    ['w-pordefinir', 'Por Definir',
+      'Valor ainda não orçamentado — diferença entre o total estimado e o que já tem custo definido.'],
+    ['wp-total-previsto', 'Total Previsto',
+      'Soma de todos os itens do casamento com custo atribuído.'],
+    ['wp-total-pago', 'Já Pago',
+      'Montante efetivamente pago de todos os fornecedores e serviços do casamento.'],
+    ['wp-total-falta', 'Em Falta',
+      'Valor que ainda falta pagar para liquidar todos os fornecedores do casamento.'],
+    ['chart-w-pie', 'Distribuição de Custos do Casamento',
+      'Gráfico de pizza com a distribuição dos custos pelos diferentes itens do casamento. Permite ver rapidamente quais as rubricas com maior peso.'],
+    ['w-imp-atual', 'Impacto no Dinheiro da Casa',
+      'Mostra o efeito do casamento nas poupanças para a casa: poupanças atuais menos o custo líquido do casamento (após prendas recebidas) = o que sobra para a escritura.'],
+    // ── Casamento — Convidados ─────────────────────────────────
+    ['gs-total', 'Total de Convidados',
+      'Número total de convidados na lista, independentemente do estado de confirmação.'],
+    ['gs-conf', 'Confirmados',
+      'Convidados que confirmaram presença. Clica no badge de presença na lista para alterar o estado.'],
+    ['gs-pend', 'Pendentes',
+      'Convidados que ainda não confirmaram nem recusaram.'],
+    ['gs-nao', 'Não Vêm',
+      'Convidados que confirmaram que não vão comparecer.'],
+    ['gs-adultos', 'Adultos',
+      'Número de convidados classificados como adulto.'],
+    ['gs-criancas', 'Crianças',
+      'Número de convidados classificados como criança.'],
+    ['gs-bebes', 'Bebés',
+      'Número de convidados classificados como bebé (não contam como pagantes).'],
+    ['gs-pagantes', 'Pagantes',
+      'Número de "cabeças" a pagar ao catering. Regra: 1 adulto = 1 · 2 crianças = 1 · 2 staff = 1 · bebé = 0.'],
+    // ── Casamento — Mesas ──────────────────────────────────────
+    ['mt-total', 'Total de Mesas',
+      'Número de mesas criadas no plano de sala.'],
+    ['mt-colocados', 'Convidados Colocados',
+      'Número de convidados já atribuídos a uma mesa.'],
+    ['mt-semmesa', 'Sem Mesa',
+      'Convidados que ainda não têm mesa atribuída. Arrasta-os para uma mesa ou usa a distribuição automática.'],
+    // ── Casamento — Tarefas ────────────────────────────────────
+    ['tk-total', 'Total de Tarefas',
+      'Número total de tarefas do casamento criadas.'],
+    ['tk-done', 'Tarefas Concluídas',
+      'Tarefas marcadas como feitas.'],
+    ['tk-todo', 'Por Fazer',
+      'Tarefas ainda por concluir.'],
+    // ── Casamento — Prendas ────────────────────────────────────
+    ['g-total-recebido', 'Total Recebido em Prendas',
+      'Soma de todas as prendas/envelopes recebidos.'],
+    ['g-num-prendas', 'Número de Prendas',
+      'Quantas entradas de prendas estão registadas.'],
+    ['g-media-prenda', 'Média por Prenda',
+      'Valor médio de cada prenda (total recebido ÷ número de prendas).'],
   ];
 
   defs.forEach(([id, title, desc]) => {
     const el = document.getElementById(id);
     if (!el) return;
-    const card = el.closest('.chart-card');
-    if (!card) return;
-    // Encontrar o elemento título (chart-title ou primeiro div filho)
-    const titleEl = card.querySelector('.chart-title') || card.firstElementChild;
-    if (!titleEl || titleEl.querySelector('.info-btn')) return;
-    const btn = document.createElement('button');
-    btn.className = 'info-btn';
-    btn.innerHTML = 'ⓘ';
-    btn.title = 'Saber mais';
-    btn.onclick = e => { e.stopPropagation(); showInfo(title, desc); };
-    titleEl.appendChild(btn);
+
+    // 1. Tentar chart-card (gráficos e tabelas)
+    const chartCard = el.closest('.chart-card');
+    if (chartCard) {
+      const titleEl = chartCard.querySelector('.chart-title') || chartCard.firstElementChild;
+      if (!titleEl || titleEl.querySelector('.info-btn')) return;
+      const btn = document.createElement('button');
+      btn.className = 'info-btn'; btn.innerHTML = 'ⓘ'; btn.title = 'Saber mais';
+      btn.onclick = e => { e.stopPropagation(); showInfo(title, desc); };
+      titleEl.appendChild(btn);
+      return;
+    }
+
+    // 2. Cards de valor — sobe a .card, usa .card-label
+    const cardEl = el.closest('.card');
+    if (cardEl) {
+      const labelEl = cardEl.querySelector('.card-label');
+      if (!labelEl || labelEl.querySelector('.info-btn')) return;
+      labelEl.style.display = 'flex';
+      labelEl.style.justifyContent = 'space-between';
+      labelEl.style.alignItems = 'center';
+      const btn = document.createElement('button');
+      btn.className = 'info-btn'; btn.innerHTML = 'ⓘ'; btn.title = 'Saber mais';
+      btn.style.fontSize = '12px';
+      btn.onclick = e => { e.stopPropagation(); showInfo(title, desc); };
+      labelEl.appendChild(btn);
+    }
   });
 }
 
