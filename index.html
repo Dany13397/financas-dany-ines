@@ -465,6 +465,13 @@
           <tbody id="pi-table"></tbody>
         </table></div>
       </div>
+      <div class="chart-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px">📊 Performance dos Investimentos — Inês</div>
+        <div class="table-wrap"><table class="asset-table">
+          <thead><tr><th>Ativo</th><th style="text-align:right" id="pi-perf-prev">Mês ant.</th><th style="text-align:right" id="pi-perf-last">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th></tr></thead>
+          <tbody id="pi-perf-table"></tbody>
+        </table></div>
+      </div>
     </div>
 
     <!-- DANY -->
@@ -494,6 +501,13 @@
         <div class="table-wrap"><table class="asset-table">
           <thead><tr><th>Ativo</th><th style="text-align:right">Valor</th><th style="text-align:right">% do Total</th></tr></thead>
           <tbody id="pd-table"></tbody>
+        </table></div>
+      </div>
+      <div class="chart-card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px">📊 Performance dos Investimentos — Dany</div>
+        <div class="table-wrap"><table class="asset-table">
+          <thead><tr><th>Ativo</th><th style="text-align:right" id="pd-perf-prev">Mês ant.</th><th style="text-align:right" id="pd-perf-last">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th></tr></thead>
+          <tbody id="pd-perf-table"></tbody>
         </table></div>
       </div>
     </div>
@@ -1599,6 +1613,34 @@ function initPerson(p) {
   tr.style.fontWeight = '700';
   tr.innerHTML = `<td>Total</td><td style="text-align:right;color:${color}">${fmt(tot)}</td><td style="text-align:right">100%</td>`;
   tbody.appendChild(tr);
+
+  // Tabela de performance individual
+  if (allData.length >= 2) {
+    const perfPrev = document.getElementById(`${prefix}-perf-prev`);
+    const perfLast = document.getElementById(`${prefix}-perf-last`);
+    const perfTbody = document.getElementById(`${prefix}-perf-table`);
+    if (perfTbody) {
+      if (perfPrev) perfPrev.textContent = dtLabel(prev.date);
+      if (perfLast) perfLast.textContent = dtLabel(last.date);
+      const perfRows = [];
+      ASSET_KEYS.forEach(key => {
+        const fVal = prev.assets?.[key]?.[p] || 0;
+        const lVal = last.assets?.[key]?.[p] || 0;
+        if (!fVal && !lVal) return;
+        const ganho = lVal - fVal;
+        const pctVal = fVal > 0 ? ((ganho / fVal) * 100).toFixed(1) : '—';
+        const c = ganho >= 0 ? 'var(--green)' : 'var(--red)';
+        perfRows.push(`<tr>
+          <td><span class="asset-cat" style="background:${ASSET_COLORS[key]}"></span>${key}</td>
+          <td style="text-align:right;color:var(--text2)">${fVal ? fmt(fVal) : '—'}</td>
+          <td style="text-align:right">${lVal ? fmt(lVal) : '—'}</td>
+          <td style="text-align:right;color:${c}">${ganho >= 0 ? '+' : ''}${fmt(ganho)}</td>
+          <td style="text-align:right;color:${c};font-weight:600">${pctVal !== '—' ? (ganho >= 0 ? '+' : '') + pctVal + '%' : '—'}</td>
+        </tr>`);
+      });
+      perfTbody.innerHTML = perfRows.join('');
+    }
+  }
 }
 
 // ── Casamento ────────────────────────────────────────────────
