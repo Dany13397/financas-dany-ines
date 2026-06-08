@@ -1217,10 +1217,8 @@ async function syncFromExcel() {
       'Dinheiro investido individual (não possível casa)'
     ]);
 
-    let novos = 0;
+    let novos = 0, atualizados = 0;
     for (const mc of mesesCols) {
-      if (datasExistentes.has(mc.date)) continue;
-
       const assets = {}, summary = {};
       for (const row of rows.slice(5)) {
         if (!row || row.length <= mc.ci) continue;
@@ -1240,8 +1238,9 @@ async function syncFromExcel() {
       const numAtivos = Object.keys(assets).length;
       if (numAtivos < 3) continue;
 
+      const jaExistia = datasExistentes.has(mc.date);
       const { error } = await sb.from('entries').upsert({ date: mc.date, assets, summary }, { onConflict: 'date' });
-      if (!error) novos++;
+      if (!error) { jaExistia ? atualizados++ : novos++; }
     }
 
     await fetchData();
@@ -1249,7 +1248,10 @@ async function syncFromExcel() {
     if (activeTab === 'evolucao') initEvolucao();
     if (activeTab === 'ativos')   initAtivos();
 
-    label.textContent = novos > 0 ? `✅ ${novos} mês${novos > 1 ? 'es' : ''} adicionado${novos > 1 ? 's' : ''}` : '✅ Já atualizado';
+    const partes = [];
+    if (novos > 0)       partes.push(`${novos} novo${novos > 1 ? 's' : ''}`);
+    if (atualizados > 0) partes.push(`${atualizados} atualizado${atualizados > 1 ? 's' : ''}`);
+    label.textContent = partes.length > 0 ? `✅ ${partes.join(', ')}` : '✅ Já atualizado';
     setTimeout(() => { label.textContent = 'Sync Excel'; btn.disabled = false; }, 3000);
 
   } catch (e) {
