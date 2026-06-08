@@ -1162,10 +1162,12 @@ async function syncFromExcel() {
   const MESES = { janeiro:'01',fevereiro:'02','março':'03',marco:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12' };
   const NOME_MAP = { 'ppr (não se pode levantar)':'PPR','ppr (nao se pode levantar)':'PPR' };
 
-  function parseValor(s) {
+  function parseValor(s, permitirNegativo = false) {
     if (!s || !s.trim()) return null;
     const n = parseFloat(s.replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',','.'));
-    return isNaN(n) ? null : n;
+    if (isNaN(n)) return null;
+    if (!permitirNegativo && n < 0) return null;
+    return n;
   }
   function parseData(s) {
     if (!s) return null;
@@ -1228,7 +1230,9 @@ async function syncFromExcel() {
         const vd = parseValor(row[mc.cd] || '');
 
         if (RESUMO_KEYS.has(nomeRaw)) {
-          summary[nomeRaw] = { ines: vi, dany: vd };
+          const viR = parseValor(row[mc.ci], true);
+          const vdR = parseValor(row[mc.cd] || '', true);
+          summary[nomeRaw] = { ines: viR, dany: vdR };
         } else if (vi !== null || vd !== null) {
           assets[normalizarAtivo(nomeRaw)] = { ines: vi, dany: vd };
         }
