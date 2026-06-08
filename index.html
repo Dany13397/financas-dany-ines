@@ -246,6 +246,12 @@
         <button class="btn btn-sm" onclick="importHistorical()">Importar Histórico</button>
       </div>
 
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button id="btn-sync-excel" onclick="syncFromExcel()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+          🔄 <span id="sync-excel-label">Sync Excel</span>
+        </button>
+      </div>
+
       <div class="cards-grid">
         <div class="card">
           <div class="card-label">Patrimônio Total</div>
@@ -1142,6 +1148,114 @@ async function saveEntry() {
     initDashboard();
     if (activeTab === 'evolucao') initEvolucao();
     if (activeTab === 'ativos') initAtivos();
+  }
+}
+
+// ── Sync do Google Sheets ─────────────────────────────────────
+async function syncFromExcel() {
+  const btn   = document.getElementById('btn-sync-excel');
+  const label = document.getElementById('sync-excel-label');
+  btn.disabled = true;
+  label.textContent = 'A sincronizar...';
+
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mLRVn9SS459fSwYFfnA0KnbKWb9p83fInFTaC685uCs/export?format=csv&gid=37722746';
+  const MESES = { janeiro:'01',fevereiro:'02','março':'03',marco:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12' };
+  const NOME_MAP = { 'ppr (não se pode levantar)':'PPR','ppr (nao se pode levantar)':'PPR' };
+
+  function parseValor(s) {
+    if (!s || !s.trim()) return null;
+    const n = parseFloat(s.replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',','.'));
+    return isNaN(n) ? null : n;
+  }
+  function parseData(s) {
+    if (!s) return null;
+    const lower = s.toLowerCase().replace(/\s+/g,' ').trim();
+    const partes = lower.split(' ').filter(p => p && p !== 'de');
+    const ano  = partes.find(p => /^\d{4}$/.test(p));
+    const mes  = partes.find(p => MESES[p]);
+    return ano && mes ? `${ano}-${MESES[mes]}` : null;
+  }
+  function normalizarAtivo(nome) {
+    return NOME_MAP[nome.trim().toLowerCase()] || nome.trim();
+  }
+
+  try {
+    const res  = await fetch(SHEET_URL);
+    const text = await res.text();
+
+    // Parsear CSV
+    const rows = text.split('\n').map(line => {
+      const cols = []; let cur = ''; let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { inQ = !inQ; }
+        else if (c === ',' && !inQ) { cols.push(cur); cur = ''; }
+        else cur += c;
+      }
+      cols.push(cur);
+      return cols;
+    });
+
+    // Linha 4 (índice 3): datas dos meses — a cada 3 colunas a partir do índice 2
+    const dataRow = rows[3] || [];
+    const mesesCols = [];
+    for (let i = 2; i < dataRow.length; i += 3) {
+      const data = parseData(dataRow[i]);
+      if (data) mesesCols.push({ date: data, ci: i, cd: i + 1 });
+    }
+
+    if (!mesesCols.length) throw new Error('Não foi possível ler as datas do Excel');
+
+    // Datas já existentes
+    const datasExistentes = new Set(allData.map(d => d.date));
+
+    const RESUMO_KEYS = new Set([
+      'Total juntos','Total Individual',
+      'Dinheiro total possivel casa','Dinheiro possivel casa individual',
+      'Ganho/Perda Casa Total Mensal','Ganho/Perda Casa Individual Mensal',
+      'Dinheiro investido total (não possível casa)',
+      'Dinheiro investido individual (não possível casa)'
+    ]);
+
+    let novos = 0;
+    for (const mc of mesesCols) {
+      if (datasExistentes.has(mc.date)) continue;
+
+      const assets = {}, summary = {};
+      for (const row of rows.slice(5)) {
+        if (!row || row.length <= mc.ci) continue;
+        const nomeRaw = (row[1] || '').trim();
+        if (!nomeRaw) continue;
+        const vi = parseValor(row[mc.ci]);
+        const vd = parseValor(row[mc.cd] || '');
+
+        if (RESUMO_KEYS.has(nomeRaw)) {
+          summary[nomeRaw] = { ines: vi, dany: vd };
+        } else if (vi !== null || vd !== null) {
+          assets[normalizarAtivo(nomeRaw)] = { ines: vi, dany: vd };
+        }
+      }
+
+      // Só guardar se tiver dados suficientes
+      const numAtivos = Object.keys(assets).length;
+      if (numAtivos < 3) continue;
+
+      const { error } = await sb.from('entries').upsert({ date: mc.date, assets, summary }, { onConflict: 'date' });
+      if (!error) novos++;
+    }
+
+    await fetchData();
+    initDashboard();
+    if (activeTab === 'evolucao') initEvolucao();
+    if (activeTab === 'ativos')   initAtivos();
+
+    label.textContent = novos > 0 ? `✅ ${novos} mês${novos > 1 ? 'es' : ''} adicionado${novos > 1 ? 's' : ''}` : '✅ Já atualizado';
+    setTimeout(() => { label.textContent = 'Sync Excel'; btn.disabled = false; }, 3000);
+
+  } catch (e) {
+    console.error('[syncFromExcel]', e);
+    label.textContent = '❌ Erro no sync';
+    setTimeout(() => { label.textContent = 'Sync Excel'; btn.disabled = false; }, 3000);
   }
 }
 
