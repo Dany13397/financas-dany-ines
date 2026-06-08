@@ -1689,6 +1689,18 @@ async function addGuest(cat) {
   renderWeddingTab();
 }
 
+async function renameGuest(cat, i, novoNome) {
+  const nome = novoNome.trim();
+  if (!nome || nome === weddingConfig.guests[cat][i].nome) return;
+  weddingConfig.guests[cat][i].nome = nome;
+  await saveWeddingConfig();
+}
+
+async function updateGuestObs(cat, i, obs) {
+  weddingConfig.guests[cat][i].obs = obs.trim();
+  await saveWeddingConfig();
+}
+
 async function removeGuest(cat, i) {
   weddingConfig.guests[cat].splice(i, 1);
   await saveWeddingConfig();
@@ -1965,7 +1977,12 @@ function renderGuestTab() {
       ? list.map((p, i) => `
         <div style="padding:9px 0;border-bottom:1px solid var(--border)">
           <div style="display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:6px;align-items:center">
-            <span style="font-size:13px">${p.nome}</span>
+            <input type="text" value="${p.nome.replace(/"/g,'&quot;')}"
+              onkeydown="if(event.key==='Enter')this.blur()"
+              onfocus="this.style.borderBottomColor='var(--accent)'"
+              onblur="this.style.borderBottomColor='transparent';renameGuest('${c.key}',${i},this.value)"
+              title="Clica para editar o nome"
+              style="font-size:13px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);outline:none;width:100%;padding:1px 2px;border-radius:4px;transition:border-color .15s">
             ${tipoBadge(p.tipo)}
             <span onclick="togglePresenca('${c.key}',${i})" style="cursor:pointer" title="Clica para mudar">${presencaBadge(p.presenca||'pendente')}</span>
             <button onclick="moveGuest('${c.key}',${i},-1)" ${i===0?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===0?'.3':'1'}">▲</button>
