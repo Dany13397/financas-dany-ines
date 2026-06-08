@@ -286,6 +286,7 @@
         <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
         <div class="progress-footer">
           <div>Atual: <span id="progress-current">—</span></div>
+          <div>Previsão: <span id="progress-previsao" style="font-weight:600">—</span></div>
           <div>Objetivo: <span id="progress-goal">—</span></div>
         </div>
       </div>
@@ -376,6 +377,12 @@
 
     <!-- EVOLUÇÃO -->
     <div id="tab-evolucao" class="tab-panel">
+      <div style="display:flex;gap:6px;margin-bottom:4px">
+        <button data-filtro="6m"  onclick="setChartFiltro('6m')"  style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:all .15s">6M</button>
+        <button data-filtro="1a"  onclick="setChartFiltro('1a')"  style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:all .15s">1A</button>
+        <button data-filtro="2a"  onclick="setChartFiltro('2a')"  style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:all .15s">2A</button>
+        <button data-filtro="all" onclick="setChartFiltro('all')" style="padding:5px 12px;border-radius:20px;border:1px solid var(--accent);font-size:12px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff;transition:all .15s">Tudo</button>
+      </div>
       <div class="chart-card">
         <div class="chart-title">Patrimônio Total ao Longo do Tempo</div>
         <div class="chart-wrap"><canvas id="chart-total-time"></canvas></div>
@@ -395,6 +402,10 @@
       <div class="chart-card">
         <div class="chart-title">Comparar Anos <small>patrimônio para casa mês a mês</small></div>
         <div class="chart-wrap"><canvas id="chart-year-compare"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Composição do Patrimônio <small>ativos empilhados</small></div>
+        <div class="chart-wrap" style="max-height:340px"><canvas id="chart-stacked-assets"></canvas></div>
       </div>
       <div class="chart-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:12px">📝 Notas dos Meses</div>
@@ -422,7 +433,7 @@
         <div style="font-size:14px;font-weight:600;margin-bottom:16px">📊 Performance dos Investimentos</div>
         <div class="table-wrap" style="margin-bottom:20px">
           <table class="asset-table">
-            <thead><tr><th>Ativo</th><th style="text-align:right">Primeiro registo</th><th style="text-align:right">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th></tr></thead>
+            <thead><tr><th>Ativo</th><th style="text-align:right">Primeiro registo</th><th style="text-align:right">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th><th style="text-align:right">CAGR/ano</th></tr></thead>
             <tbody id="perf-table-body"></tbody>
           </table>
         </div>
@@ -468,7 +479,7 @@
       <div class="chart-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:16px">📊 Performance dos Investimentos — Inês</div>
         <div class="table-wrap"><table class="asset-table">
-          <thead><tr><th>Ativo</th><th style="text-align:right" id="pi-perf-prev">Mês ant.</th><th style="text-align:right" id="pi-perf-last">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th></tr></thead>
+          <thead><tr><th>Ativo</th><th style="text-align:right" id="pi-perf-prev">Mês ant.</th><th style="text-align:right" id="pi-perf-last">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th><th style="text-align:right">CAGR/ano</th></tr></thead>
           <tbody id="pi-perf-table"></tbody>
         </table></div>
       </div>
@@ -506,7 +517,7 @@
       <div class="chart-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:16px">📊 Performance dos Investimentos — Dany</div>
         <div class="table-wrap"><table class="asset-table">
-          <thead><tr><th>Ativo</th><th style="text-align:right" id="pd-perf-prev">Mês ant.</th><th style="text-align:right" id="pd-perf-last">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th></tr></thead>
+          <thead><tr><th>Ativo</th><th style="text-align:right" id="pd-perf-prev">Mês ant.</th><th style="text-align:right" id="pd-perf-last">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th><th style="text-align:right">CAGR/ano</th></tr></thead>
           <tbody id="pd-perf-table"></tbody>
         </table></div>
       </div>
@@ -909,6 +920,43 @@ const dtLabel = d => {
   const ms = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   return (ms[parseInt(m)-1]||m)+' '+y.slice(2);
 };
+
+// ── Filtro de datas dos gráficos ─────────────────────────────
+let chartFiltro = 'all';
+
+function getFilteredData() {
+  const n = chartFiltro === '6m' ? 6 : chartFiltro === '1a' ? 12 : chartFiltro === '2a' ? 24 : 0;
+  return n > 0 ? allData.slice(-n) : allData;
+}
+
+function setChartFiltro(f) {
+  chartFiltro = f;
+  document.querySelectorAll('[data-filtro]').forEach(b => {
+    const active = b.dataset.filtro === f;
+    b.style.background   = active ? 'var(--accent)' : 'var(--surface2)';
+    b.style.color        = active ? '#fff' : 'var(--text2)';
+    b.style.borderColor  = active ? 'var(--accent)' : 'var(--border)';
+  });
+  initEvolucao();
+}
+
+// ── CAGR helpers ─────────────────────────────────────────────
+function monthsBetween(d1, d2) {
+  const [y1, m1] = d1.replace(/b$/, '').split('-').map(Number);
+  const [y2, m2] = d2.replace(/b$/, '').split('-').map(Number);
+  return (y2 - y1) * 12 + (m2 - m1);
+}
+
+function calcCAGR(startVal, endVal, months) {
+  if (!startVal || !endVal || months <= 0 || startVal <= 0) return null;
+  return (Math.pow(endVal / startVal, 12 / months) - 1) * 100;
+}
+
+function fmtCAGR(cagr) {
+  if (cagr === null) return '—';
+  const c = cagr >= 0 ? 'var(--green)' : 'var(--red)';
+  return `<span style="color:${c};font-weight:600">${cagr >= 0 ? '+' : ''}${cagr.toFixed(1)}%</span>`;
+}
 
 // ── Boot ─────────────────────────────────────────────────────
 const CACHE_SESSION = 'cache_session';
@@ -1432,6 +1480,31 @@ function initDashboard() {
     ? `Faltam ${fmt(falta)} · escritura ${fmt(naEscritura)} + casamento ${fmt(weddingNet)}${extrasCasa>0?' + extras '+fmt(extrasCasa):''}`
     : '🎉 Objetivo atingido!';
   document.getElementById('last-update').textContent = 'Último registo: '+dtLabel(last.date);
+
+  // Previsão rápida para o card de progresso (últimos 6 meses)
+  const casaValsP = allData.slice(-7).map(d => d.summary?.['Dinheiro total possivel casa']?.ines || 0);
+  const deltasP   = casaValsP.slice(1).map((v, i) => v - casaValsP[i]);
+  const avgP      = deltasP.length ? deltasP.reduce((s, v) => s + v, 0) / deltasP.length : 0;
+  const prevEl2   = document.getElementById('progress-previsao');
+  if (prevEl2) {
+    if (falta <= 0) {
+      prevEl2.textContent = '✅ Atingido';
+      prevEl2.style.color = 'var(--green)';
+    } else if (avgP > 0) {
+      const mesesN = Math.ceil(falta / avgP);
+      const dp = new Date();
+      dp.setMonth(dp.getMonth() + mesesN);
+      const ml = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      const WEDDING_DATE_LOCAL = new Date('2027-07-16');
+      const mesesAoC = (WEDDING_DATE_LOCAL.getFullYear() - dp.getFullYear()) * 12 + (WEDDING_DATE_LOCAL.getMonth() - dp.getMonth());
+      prevEl2.textContent = ml[dp.getMonth()] + ' ' + dp.getFullYear();
+      prevEl2.style.color = mesesAoC >= 0 ? 'var(--green)' : 'var(--red)';
+    } else {
+      prevEl2.textContent = '—';
+      prevEl2.style.color = 'var(--text2)';
+    }
+  }
+
   initSavingsRate();
 
   const casaI = s['Dinheiro possivel casa individual']?.ines||0;
@@ -1469,19 +1542,40 @@ function initDashboard() {
 // ── Evolução ──────────────────────────────────────────────────
 function initEvolucao() {
   if (!allData.length) return;
-  const labels  = allData.map(d=>dtLabel(d.date));
-  const totals  = allData.map(d=>d.summary?.['Total juntos']?.ines||0);
-  const casas   = allData.map(d=>d.summary?.['Dinheiro total possivel casa']?.ines||0);
-  const inesArr = allData.map(d=>d.summary?.['Total Individual']?.ines||0);
-  const danyArr = allData.map(d=>d.summary?.['Total Individual']?.dany||0);
-  const goalLine= allData.map(()=>goal);
+  const fd      = getFilteredData();
+  const labels  = fd.map(d=>dtLabel(d.date));
+  const totals  = fd.map(d=>d.summary?.['Total juntos']?.ines||0);
+  const casas   = fd.map(d=>d.summary?.['Dinheiro total possivel casa']?.ines||0);
+  const inesArr = fd.map(d=>d.summary?.['Total Individual']?.ines||0);
+  const danyArr = fd.map(d=>d.summary?.['Total Individual']?.dany||0);
+  const goalLine= fd.map(()=>goal);
 
   mkChart('chart-total-time',{ type:'line', data:{ labels, datasets:[{ label:'Patrimônio Total', data:totals, borderColor:'#43d68a', backgroundColor:'rgba(67,214,138,.1)', fill:true, tension:.4, pointRadius:3 }]}, options:{...baseOpts, plugins:{...baseOpts.plugins, tooltip:{ callbacks:{ label: c=>' '+fmt(c.raw) }}}}});
   mkChart('chart-casa-time',{ type:'line', data:{ labels, datasets:[{ label:'Para Casa', data:casas, borderColor:'#ffd166', backgroundColor:'rgba(255,209,102,.1)', fill:true, tension:.4, pointRadius:3 },{ label:'Objetivo', data:goalLine, borderColor:'#ef5350', borderDash:[6,4], pointRadius:0, borderWidth:2 }]}, options:{...baseOpts, plugins:{...baseOpts.plugins, tooltip:{ callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.raw) }}}}});
   mkChart('chart-individual-time',{ type:'line', data:{ labels, datasets:[{ label:'Inês', data:inesArr, borderColor:'#ff6584', backgroundColor:'rgba(255,101,132,.1)', fill:true, tension:.4, pointRadius:3 },{ label:'Dany', data:danyArr, borderColor:'#6c63ff', backgroundColor:'rgba(108,99,255,.1)', fill:true, tension:.4, pointRadius:3 }]}, options:{...baseOpts, plugins:{...baseOpts.plugins, tooltip:{ mode:'index', callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.raw) }}}}});
 
-  const deltas = allData.slice(1).map((d,i) => (d.summary?.['Total juntos']?.ines||0) - (allData[i].summary?.['Total juntos']?.ines||0));
-  mkChart('chart-monthly-delta',{ type:'bar', data:{ labels:allData.slice(1).map(d=>dtLabel(d.date)), datasets:[{ label:'Variação Mensal', data:deltas, backgroundColor:deltas.map(v=>v>=0?'rgba(67,214,138,.8)':'rgba(239,83,80,.8)'), borderRadius:4 }]}, options:{...baseOpts, plugins:{...baseOpts.plugins, tooltip:{ callbacks:{ label: c=>' '+fmt(c.raw) }}}}});
+  const deltas = fd.slice(1).map((d,i) => (d.summary?.['Total juntos']?.ines||0) - (fd[i].summary?.['Total juntos']?.ines||0));
+  mkChart('chart-monthly-delta',{ type:'bar', data:{ labels:fd.slice(1).map(d=>dtLabel(d.date)), datasets:[{ label:'Variação Mensal', data:deltas, backgroundColor:deltas.map(v=>v>=0?'rgba(67,214,138,.8)':'rgba(239,83,80,.8)'), borderRadius:4 }]}, options:{...baseOpts, plugins:{...baseOpts.plugins, tooltip:{ callbacks:{ label: c=>' '+fmt(c.raw) }}}}});
+
+  // Gráfico de barras empilhadas por ativo
+  const activeKeys = ASSET_KEYS.filter(k => fd.some(d => ((d.assets?.[k]?.ines||0) + (d.assets?.[k]?.dany||0)) > 0));
+  const stackedDatasets = activeKeys.map(k => ({
+    label: k.replace('Trade Republic (Carteira)','TR Cart.').replace('Trade Republic (Saldo)','TR Saldo').replace('Certificados de Aforro','Cert. Aforro').replace('Ações Accenture','Accenture'),
+    data: fd.map(d => Math.max(0, (d.assets?.[k]?.ines||0) + (d.assets?.[k]?.dany||0))),
+    backgroundColor: ASSET_COLORS[k],
+    borderWidth: 0
+  }));
+  mkChart('chart-stacked-assets', {
+    type: 'bar',
+    data: { labels, datasets: stackedDatasets },
+    options: { ...baseOpts,
+      scales: {
+        x: { ...baseOpts.scales.x, stacked: true },
+        y: { ...baseOpts.scales.y, stacked: true, ticks: { ...baseOpts.scales.y.ticks, callback: v => fmtShort(v) } }
+      },
+      plugins: { ...baseOpts.plugins, tooltip: { mode: 'index', callbacks: { label: c => ' ' + c.dataset.label + ': ' + fmtShort(c.raw) } } }
+    }
+  });
 
   // Notas do histórico
   const comNotas = allData.filter(d => d.nota?.trim());
@@ -1616,8 +1710,8 @@ function initPerson(p) {
 
   // Tabela de performance individual
   if (allData.length >= 2) {
-    const perfPrev = document.getElementById(`${prefix}-perf-prev`);
-    const perfLast = document.getElementById(`${prefix}-perf-last`);
+    const perfPrev  = document.getElementById(`${prefix}-perf-prev`);
+    const perfLast  = document.getElementById(`${prefix}-perf-last`);
     const perfTbody = document.getElementById(`${prefix}-perf-table`);
     if (perfTbody) {
       if (perfPrev) perfPrev.textContent = dtLabel(prev.date);
@@ -1627,15 +1721,21 @@ function initPerson(p) {
         const fVal = prev.assets?.[key]?.[p] || 0;
         const lVal = last.assets?.[key]?.[p] || 0;
         if (!fVal && !lVal) return;
-        const ganho = lVal - fVal;
+        const ganho  = lVal - fVal;
         const pctVal = fVal > 0 ? ((ganho / fVal) * 100).toFixed(1) : '—';
-        const c = ganho >= 0 ? 'var(--green)' : 'var(--red)';
+        const c      = ganho >= 0 ? 'var(--green)' : 'var(--red)';
+        // CAGR desde o 1º registo individual
+        const firstE = allData.find(d => (d.assets?.[key]?.[p]||0) > 0);
+        const fFirst = firstE?.assets?.[key]?.[p] || 0;
+        const meses  = firstE ? monthsBetween(firstE.date, last.date) : 0;
+        const cagr   = calcCAGR(fFirst, lVal, meses);
         perfRows.push(`<tr>
           <td><span class="asset-cat" style="background:${ASSET_COLORS[key]}"></span>${key}</td>
           <td style="text-align:right;color:var(--text2)">${fVal ? fmt(fVal) : '—'}</td>
           <td style="text-align:right">${lVal ? fmt(lVal) : '—'}</td>
           <td style="text-align:right;color:${c}">${ganho >= 0 ? '+' : ''}${fmt(ganho)}</td>
           <td style="text-align:right;color:${c};font-weight:600">${pctVal !== '—' ? (ganho >= 0 ? '+' : '') + pctVal + '%' : '—'}</td>
+          <td style="text-align:right">${fmtCAGR(cagr)}</td>
         </tr>`);
       });
       perfTbody.innerHTML = perfRows.join('');
@@ -2956,36 +3056,41 @@ function initYearCompare() {
 // ── Performance dos Investimentos ─────────────────────────────
 function initPerformance() {
   if (allData.length < 2) return;
-  const prev  = allData[allData.length-2];
   const last  = allData[allData.length-1];
   const tbody = document.getElementById('perf-table-body');
   if (!tbody) return;
 
-  // Cabeçalho com os meses
+  // Cabeçalho: 1º registo → atual
   const thead = tbody.closest('table')?.querySelector('thead tr');
+  const firstDateLabel = dtLabel(allData[0].date);
+  const lastDateLabel  = dtLabel(last.date);
   if (thead) {
-    thead.cells[1].textContent = dtLabel(prev.date);
-    thead.cells[2].textContent = dtLabel(last.date);
+    thead.cells[1].textContent = firstDateLabel;
+    thead.cells[2].textContent = lastDateLabel;
   }
 
   const rows = [];
   ASSET_KEYS.forEach(key => {
-    const fInes = prev.assets?.[key]?.ines || 0;
-    const fDany = prev.assets?.[key]?.dany || 0;
+    // Encontrar 1º mês com valor para este ativo
+    const firstEntry = allData.find(d => ((d.assets?.[key]?.ines||0) + (d.assets?.[key]?.dany||0)) > 0);
+    if (!firstEntry) return;
     const lInes = last.assets?.[key]?.ines  || 0;
     const lDany = last.assets?.[key]?.dany  || 0;
-    const fTot  = fInes + fDany;
     const lTot  = lInes + lDany;
-    if (!fTot && !lTot) return;
+    if (!lTot) return;
+    const fTot  = (firstEntry.assets?.[key]?.ines||0) + (firstEntry.assets?.[key]?.dany||0);
     const ganho = lTot - fTot;
     const pct   = fTot > 0 ? ((ganho / fTot) * 100).toFixed(1) : '—';
     const color = ganho >= 0 ? 'var(--green)' : 'var(--red)';
+    const meses = monthsBetween(firstEntry.date, last.date);
+    const cagr  = calcCAGR(fTot, lTot, meses);
     rows.push(`<tr>
-      <td><span class="asset-cat" style="background:${ASSET_COLORS[key]}"></span>${key}</td>
+      <td><span class="asset-cat" style="background:${ASSET_COLORS[key]}"></span>${key} <small style="color:var(--text2);font-size:10px">${dtLabel(firstEntry.date)}</small></td>
       <td style="text-align:right;color:var(--text2)">${fmt(fTot)}</td>
       <td style="text-align:right">${fmt(lTot)}</td>
       <td style="text-align:right;color:${color}">${ganho>=0?'+':''}${fmt(ganho)}</td>
       <td style="text-align:right;color:${color};font-weight:600">${pct !== '—' ? (ganho>=0?'+':'')+pct+'%' : '—'}</td>
+      <td style="text-align:right">${fmtCAGR(cagr)}</td>
     </tr>`);
   });
   tbody.innerHTML = rows.join('');
