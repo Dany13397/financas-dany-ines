@@ -3056,36 +3056,37 @@ function initYearCompare() {
 // ── Performance dos Investimentos ─────────────────────────────
 function initPerformance() {
   if (allData.length < 2) return;
+  const prev  = allData[allData.length-2];
   const last  = allData[allData.length-1];
   const tbody = document.getElementById('perf-table-body');
   if (!tbody) return;
 
-  // Cabeçalho: 1º registo → atual
+  // Cabeçalho: mês anterior → atual
   const thead = tbody.closest('table')?.querySelector('thead tr');
-  const firstDateLabel = dtLabel(allData[0].date);
-  const lastDateLabel  = dtLabel(last.date);
   if (thead) {
-    thead.cells[1].textContent = firstDateLabel;
-    thead.cells[2].textContent = lastDateLabel;
+    thead.cells[1].textContent = dtLabel(prev.date);
+    thead.cells[2].textContent = dtLabel(last.date);
   }
 
   const rows = [];
   ASSET_KEYS.forEach(key => {
-    // Encontrar 1º mês com valor para este ativo
-    const firstEntry = allData.find(d => ((d.assets?.[key]?.ines||0) + (d.assets?.[key]?.dany||0)) > 0);
-    if (!firstEntry) return;
-    const lInes = last.assets?.[key]?.ines  || 0;
-    const lDany = last.assets?.[key]?.dany  || 0;
+    const fInes = prev.assets?.[key]?.ines || 0;
+    const fDany = prev.assets?.[key]?.dany || 0;
+    const lInes = last.assets?.[key]?.ines || 0;
+    const lDany = last.assets?.[key]?.dany || 0;
+    const fTot  = fInes + fDany;
     const lTot  = lInes + lDany;
-    if (!lTot) return;
-    const fTot  = (firstEntry.assets?.[key]?.ines||0) + (firstEntry.assets?.[key]?.dany||0);
+    if (!fTot && !lTot) return;
     const ganho = lTot - fTot;
     const pct   = fTot > 0 ? ((ganho / fTot) * 100).toFixed(1) : '—';
     const color = ganho >= 0 ? 'var(--green)' : 'var(--red)';
-    const meses = monthsBetween(firstEntry.date, last.date);
-    const cagr  = calcCAGR(fTot, lTot, meses);
+    // CAGR desde 1º registo do ativo
+    const firstEntry = allData.find(d => ((d.assets?.[key]?.ines||0) + (d.assets?.[key]?.dany||0)) > 0);
+    const fFirst = firstEntry ? (firstEntry.assets?.[key]?.ines||0) + (firstEntry.assets?.[key]?.dany||0) : 0;
+    const meses  = firstEntry ? monthsBetween(firstEntry.date, last.date) : 0;
+    const cagr   = calcCAGR(fFirst, lTot, meses);
     rows.push(`<tr>
-      <td><span class="asset-cat" style="background:${ASSET_COLORS[key]}"></span>${key} <small style="color:var(--text2);font-size:10px">${dtLabel(firstEntry.date)}</small></td>
+      <td><span class="asset-cat" style="background:${ASSET_COLORS[key]}"></span>${key}</td>
       <td style="text-align:right;color:var(--text2)">${fmt(fTot)}</td>
       <td style="text-align:right">${fmt(lTot)}</td>
       <td style="text-align:right;color:${color}">${ganho>=0?'+':''}${fmt(ganho)}</td>
