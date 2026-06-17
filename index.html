@@ -27,7 +27,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   button,a,select,label{touch-action:manipulation;}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;min-height:-webkit-fill-available;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;min-height:-webkit-fill-available;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:hidden;max-width:100vw;}
   html{height:-webkit-fill-available;}
 
   /* ── Auth Screen ── */
@@ -113,7 +113,17 @@
   .person-casa strong{color:var(--text);}
 
   /* ── Asset table ── */
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;}
+  .chart-card{min-width:0;}
+  .pie-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+  @media(max-width:380px){.pie-grid{grid-template-columns:1fr;}}
+  .asset-table{table-layout:fixed;width:100%;}
+  .asset-table th:first-child,.asset-table td:first-child{width:30%;word-break:break-word;}
+  @media(max-width:600px){
+    .asset-table{font-size:11px;}
+    .asset-table th,.asset-table td{padding:8px 5px;}
+    .asset-table th:first-child,.asset-table td:first-child{width:26%;}
+  }
 
   /* ── iOS select fix ── */
   select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:16px;outline:none;width:100%;-webkit-appearance:none;appearance:none;}
@@ -467,7 +477,7 @@
 
     <!-- ATIVOS -->
     <div id="tab-ativos" class="tab-panel">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div class="pie-grid">
         <div class="chart-card" style="margin-bottom:0">
           <div class="chart-title">Inês</div>
           <div class="chart-wrap"><canvas id="chart-pie-ines" style="max-height:200px"></canvas></div>
@@ -485,7 +495,7 @@
         <div style="font-size:14px;font-weight:600;margin-bottom:16px">📊 Performance dos Investimentos</div>
         <div class="table-wrap" style="margin-bottom:20px">
           <table class="asset-table">
-            <thead><tr><th>Ativo</th><th style="text-align:right">Primeiro registo</th><th style="text-align:right">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th><th style="text-align:right">CAGR/ano</th></tr></thead>
+            <thead><tr><th>Ativo</th><th style="text-align:right">Início</th><th style="text-align:right">Atual</th><th style="text-align:right">Ganho</th><th style="text-align:right">%</th><th style="text-align:right">CAGR</th></tr></thead>
             <tbody id="perf-table-body"></tbody>
           </table>
         </div>
@@ -511,7 +521,7 @@
         <div class="chart-title">Evolução ao Longo do Tempo <small style="color:var(--ines)">Inês</small></div>
         <div class="chart-wrap"><canvas id="chart-pi-time"></canvas></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div class="pie-grid">
         <div class="chart-card" style="margin-bottom:0">
           <div class="chart-title">Total vs Casa</div>
           <div class="chart-wrap"><canvas id="chart-pi-split" style="max-height:200px"></canvas></div>
@@ -531,7 +541,7 @@
       <div class="chart-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:16px">📊 Performance dos Investimentos — Inês</div>
         <div class="table-wrap"><table class="asset-table">
-          <thead><tr><th>Ativo</th><th style="text-align:right" id="pi-perf-prev">Mês ant.</th><th style="text-align:right" id="pi-perf-last">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th><th style="text-align:right">CAGR/ano</th></tr></thead>
+          <thead><tr><th>Ativo</th><th style="text-align:right" id="pi-perf-prev">Ant.</th><th style="text-align:right" id="pi-perf-last">Atual</th><th style="text-align:right">Ganho</th><th style="text-align:right">%</th><th style="text-align:right">CAGR</th></tr></thead>
           <tbody id="pi-perf-table"></tbody>
         </table></div>
       </div>
@@ -549,7 +559,7 @@
         <div class="chart-title">Evolução ao Longo do Tempo <small style="color:var(--dany)">Dany</small></div>
         <div class="chart-wrap"><canvas id="chart-pd-time"></canvas></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div class="pie-grid">
         <div class="chart-card" style="margin-bottom:0">
           <div class="chart-title">Total vs Casa</div>
           <div class="chart-wrap"><canvas id="chart-pd-split" style="max-height:200px"></canvas></div>
@@ -569,7 +579,7 @@
       <div class="chart-card">
         <div style="font-size:14px;font-weight:600;margin-bottom:16px">📊 Performance dos Investimentos — Dany</div>
         <div class="table-wrap"><table class="asset-table">
-          <thead><tr><th>Ativo</th><th style="text-align:right" id="pd-perf-prev">Mês ant.</th><th style="text-align:right" id="pd-perf-last">Atual</th><th style="text-align:right">Ganho/Perda</th><th style="text-align:right">%</th><th style="text-align:right">CAGR/ano</th></tr></thead>
+          <thead><tr><th>Ativo</th><th style="text-align:right" id="pd-perf-prev">Ant.</th><th style="text-align:right" id="pd-perf-last">Atual</th><th style="text-align:right">Ganho</th><th style="text-align:right">%</th><th style="text-align:right">CAGR</th></tr></thead>
           <tbody id="pd-perf-table"></tbody>
         </table></div>
       </div>
