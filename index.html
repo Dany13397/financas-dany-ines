@@ -158,6 +158,16 @@
   /* ── Confirm modal ── */
   .danger-btn{background:linear-gradient(135deg,var(--red),#c62828);}
 
+  /* ── Wedding items grid ── */
+  .w-item-grid{display:grid;grid-template-columns:1fr 120px 120px 36px;gap:8px;align-items:center;margin-bottom:6px;}
+  .w-item-nums{display:contents;}
+  @media(max-width:520px){
+    .w-item-grid{grid-template-columns:1fr 32px;}
+    .w-item-nums{display:flex;gap:6px;grid-column:1/-1;order:3;}
+    .w-item-del{order:2;}
+    .w-item-name{order:1;}
+  }
+
   /* ── Print / PDF ── */
   @media print {
     body { background:#fff !important; color:#000 !important; }
@@ -571,11 +581,13 @@
 
         <div class="form-section">
           <h3>💍 Itens do Casamento</h3>
-          <div style="display:grid;grid-template-columns:1fr 130px 130px 36px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:4px">
+          <div class="w-item-grid" style="padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:4px">
             <span style="font-size:11px;color:var(--text2);text-transform:uppercase">Item</span>
-            <span style="font-size:11px;color:var(--text2);text-transform:uppercase;text-align:right">Custo</span>
-            <span style="font-size:11px;color:var(--text2);text-transform:uppercase;text-align:right">Já Pago</span>
             <span></span>
+            <div class="w-item-nums" style="display:contents">
+              <span style="font-size:11px;color:var(--text2);text-transform:uppercase;text-align:right">Custo</span>
+              <span style="font-size:11px;color:var(--text2);text-transform:uppercase;text-align:right">Já Pago</span>
+            </div>
           </div>
           <div id="w-items-list" style="margin-bottom:16px"></div>
           <div class="form-grid">
@@ -2567,12 +2579,14 @@ function renderWeddingTab() {
     const barColor = pct >= 100 ? 'var(--green)' : pct > 0 ? 'var(--accent)' : 'var(--border)';
     return `
     <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-      <div style="display:grid;grid-template-columns:1fr 130px 130px 36px;gap:8px;align-items:center;margin-bottom:6px">
-        <input type="text" value="${item.nome}" onchange="updateWeddingItem(${i},'nome',this.value)"
-          style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;width:100%">
-        ${inp(custo, '0', `updateWeddingItem(${i},'custo',this.value)`)}
-        ${inp(pago,  '0', `updateWeddingItem(${i},'pago',this.value)`)}
-        <button onclick="removeWeddingItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1">✕</button>
+      <div class="w-item-grid">
+        <input class="w-item-name" type="text" value="${item.nome}" onchange="updateWeddingItem(${i},'nome',this.value)"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:16px;outline:none;width:100%">
+        <button class="w-item-del" onclick="removeWeddingItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1;touch-action:manipulation">✕</button>
+        <div class="w-item-nums">
+          ${inp(custo, '0', `updateWeddingItem(${i},'custo',this.value)`)}
+          ${inp(pago,  '0', `updateWeddingItem(${i},'pago',this.value)`)}
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div style="flex:1;background:var(--surface2);border-radius:99px;height:4px;overflow:hidden">
