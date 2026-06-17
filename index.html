@@ -285,7 +285,7 @@
 <div id="screen-app">
   <div class="header">
     <div class="header-left">
-      <h1>Finanças Dany & Inês</h1>
+      <h1 id="header-title">Início</h1>
       <p id="last-update">A carregar...</p>
     </div>
     <div class="header-right">
@@ -2997,12 +2997,15 @@ function togglePrivacy() {
 }
 
 // ── Navigation ────────────────────────────────────────────────
+const _tabTitles = {dashboard:'Início',evolucao:'Evolução',ativos:'Ativos',ines:'Inês',dany:'Dany',casamento:'Casamento',casa:'Casa',adicionar:'Registar'};
+
 function switchTab(tab, btn) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
   btn.classList.add('active');
   activeTab = tab;
+  document.getElementById('header-title').textContent = _tabTitles[tab] || tab;
   window.scrollTo({ top: 0, behavior: 'instant' });
   if (tab==='evolucao') { initEvolucao(); initYearCompare(); }
   if (tab==='ativos')   initAtivos();
