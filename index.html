@@ -26,6 +26,7 @@
     --radius:14px;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  button,a,select,label{touch-action:manipulation;}
   body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;min-height:-webkit-fill-available;overscroll-behavior-y:none;-webkit-font-smoothing:antialiased;}
   html{height:-webkit-fill-available;}
 
@@ -168,6 +169,29 @@
     .w-item-name{order:1;}
   }
 
+  /* ── iOS Touch Feedback & Active States ── */
+  .btn:active{opacity:.72;transform:scale(.98);}
+  .nav-btn:active{color:var(--accent);}
+  .user-badge:active,.goal-badge:active{opacity:.6;}
+  .btn-sm:active{opacity:.72;}
+
+  /* ── Content scroll ── */
+  .content{-webkit-overflow-scrolling:touch;}
+
+  /* ── Modal iOS fixes ── */
+  .modal-bg{-webkit-overflow-scrolling:touch;padding:max(20px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));}
+  .modal{overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:calc(88dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));}
+
+  /* ── Range input iOS ── */
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--surface);box-shadow:0 2px 6px rgba(0,0,0,.35);}
+
+  /* ── Textarea iOS ── */
+  textarea{resize:none;-webkit-appearance:none;}
+
+  /* ── Touch targets — hit areas ≥ 44px ── */
+  .info-btn{padding:8px;margin:-8px;touch-action:manipulation;}
+
   /* ── Print / PDF ── */
   @media print {
     body { background:#fff !important; color:#000 !important; }
@@ -205,7 +229,7 @@
     <div id="form-login">
       <div class="form-group" style="margin-bottom:12px">
         <label>Email</label>
-        <input type="email" id="login-email" placeholder="o-teu@email.com" autocomplete="email">
+        <input type="email" id="login-email" placeholder="o-teu@email.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false">
       </div>
       <div class="form-group" style="margin-bottom:20px">
         <label>Password</label>
@@ -221,7 +245,7 @@
     <div id="form-reset" style="display:none">
       <div class="form-group" style="margin-bottom:20px">
         <label>Email</label>
-        <input type="email" id="reset-email" placeholder="o-teu@email.com">
+        <input type="email" id="reset-email" placeholder="o-teu@email.com" autocapitalize="none" autocorrect="off" spellcheck="false">
       </div>
       <button class="btn" onclick="doReset()">Enviar link de recuperação</button>
       <p style="text-align:center;margin-top:14px;font-size:13px;color:var(--text2)">
@@ -398,10 +422,10 @@
     <!-- EVOLUÇÃO -->
     <div id="tab-evolucao" class="tab-panel">
       <div style="display:flex;gap:6px;margin-bottom:4px">
-        <button data-filtro="6m"  onclick="setChartFiltro('6m')"  style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:all .15s">6M</button>
-        <button data-filtro="1a"  onclick="setChartFiltro('1a')"  style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:all .15s">1A</button>
-        <button data-filtro="2a"  onclick="setChartFiltro('2a')"  style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:all .15s">2A</button>
-        <button data-filtro="all" onclick="setChartFiltro('all')" style="padding:5px 12px;border-radius:20px;border:1px solid var(--accent);font-size:12px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff;transition:all .15s">Tudo</button>
+        <button data-filtro="6m"  onclick="setChartFiltro('6m')"  style="padding:8px 14px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:all .15s;touch-action:manipulation;-webkit-appearance:none;">6M</button>
+        <button data-filtro="1a"  onclick="setChartFiltro('1a')"  style="padding:8px 14px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:all .15s;touch-action:manipulation;-webkit-appearance:none;">1A</button>
+        <button data-filtro="2a"  onclick="setChartFiltro('2a')"  style="padding:8px 14px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text2);transition:all .15s;touch-action:manipulation;-webkit-appearance:none;">2A</button>
+        <button data-filtro="all" onclick="setChartFiltro('all')" style="padding:8px 14px;border-radius:20px;border:1px solid var(--accent);font-size:12px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff;transition:all .15s;touch-action:manipulation;-webkit-appearance:none;">Tudo</button>
       </div>
       <div class="chart-card">
         <div class="chart-title">Patrimônio Total ao Longo do Tempo</div>
@@ -591,8 +615,8 @@
           </div>
           <div id="w-items-list" style="margin-bottom:16px"></div>
           <div class="form-grid">
-            <div class="form-group"><label>Descrição</label><input type="text" id="w-item-nome" placeholder="ex: Fotógrafo, DJ..."></div>
-            <div class="form-group"><label>Custo estimado (€)</label><input type="number" id="w-item-custo" placeholder="0" step="100"></div>
+            <div class="form-group"><label>Descrição</label><input type="text" id="w-item-nome" placeholder="ex: Fotógrafo, DJ..." autocorrect="off"></div>
+            <div class="form-group"><label>Custo estimado (€)</label><input type="number" id="w-item-custo" placeholder="0" step="100" inputmode="decimal"></div>
             <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn" onclick="addWeddingItem()">➕ Adicionar</button></div>
           </div>
           <div class="success-msg" id="w-save-ok">✅ Guardado!</div>
@@ -629,9 +653,9 @@
         <div id="gv-all" style="display:none">
           <div style="margin-bottom:12px;display:flex;gap:8px">
             <input type="text" id="guest-search" placeholder="🔍 Pesquisar convidado..." oninput="renderAllGuests()"
-              style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none">
+              style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:16px;outline:none;-webkit-appearance:none;">
             <select id="guest-filter-presenca" onchange="renderAllGuests()"
-              style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px;color:var(--text);font-size:13px;outline:none">
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px;color:var(--text);font-size:16px;outline:none;-webkit-appearance:none;appearance:none">
               <option value="">Todos</option>
               <option value="confirmado">✅ Confirmados</option>
               <option value="pendente">⏳ Pendentes</option>
@@ -667,7 +691,7 @@
             <span>📋 Sem Mesa</span>
             <span id="mt-semmesa-count" style="font-size:12px;color:var(--text2)"></span>
           </div>
-          <div id="mt-unassigned" style="display:flex;flex-wrap:wrap;gap:6px;min-height:40px"
+          <div id="mt-unassigned" data-table-id="__unassigned__" style="display:flex;flex-wrap:wrap;gap:6px;min-height:48px"
             ondragover="event.preventDefault()" ondrop="dropGuest(event,'__unassigned__')">
             <span style="font-size:12px;color:var(--text2);align-self:center" id="mt-unassigned-empty">Todos os convidados estão numa mesa.</span>
           </div>
@@ -703,8 +727,8 @@
         <div class="form-section">
           <h3>🎁 Adicionar Prenda</h3>
           <div class="form-grid" style="margin-bottom:12px">
-            <div class="form-group"><label>Nome do Convidado</label><input type="text" id="g-nome" placeholder="ex: João e Maria Silva"></div>
-            <div class="form-group"><label>Valor (€)</label><input type="number" id="g-valor" placeholder="0" step="10"></div>
+            <div class="form-group"><label>Nome do Convidado</label><input type="text" id="g-nome" placeholder="ex: João e Maria Silva" autocorrect="off"></div>
+            <div class="form-group"><label>Valor (€)</label><input type="number" id="g-valor" placeholder="0" step="10" inputmode="decimal"></div>
             <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn" onclick="addGift()">➕ Adicionar</button></div>
           </div>
           <div id="gifts-list"></div>
@@ -733,9 +757,9 @@
       <div class="form-section">
         <h3>🏦 Simulador de Crédito</h3>
         <div class="form-grid">
-          <div class="form-group"><label>Valor do Crédito (€)</label><input type="number" id="sim-capital" value="180000" step="1000" oninput="calcSimulador()"></div>
-          <div class="form-group"><label>Taxa de Juro Anual (%)</label><input type="number" id="sim-taxa" value="3.5" step="0.1" oninput="calcSimulador()"></div>
-          <div class="form-group"><label>Prazo (anos)</label><input type="number" id="sim-prazo" value="30" step="1" oninput="calcSimulador()"></div>
+          <div class="form-group"><label>Valor do Crédito (€)</label><input type="number" id="sim-capital" value="180000" step="1000" inputmode="decimal" oninput="calcSimulador()"></div>
+          <div class="form-group"><label>Taxa de Juro Anual (%)</label><input type="number" id="sim-taxa" value="3.5" step="0.1" inputmode="decimal" oninput="calcSimulador()"></div>
+          <div class="form-group"><label>Prazo (anos)</label><input type="number" id="sim-prazo" value="30" step="1" inputmode="numeric" oninput="calcSimulador()"></div>
         </div>
         <div id="sim-result" style="margin-top:16px"></div>
       </div>
@@ -757,15 +781,15 @@
         <div class="form-grid">
           <div class="form-group">
             <label>Preço Total da Casa (€)</label>
-            <input type="number" id="casa-f-preco" placeholder="260000" step="1000">
+            <input type="number" id="casa-f-preco" placeholder="260000" step="1000" inputmode="decimal">
           </div>
           <div class="form-group">
             <label>Crédito Bancário (€)</label>
-            <input type="number" id="casa-f-credito" placeholder="180000" step="1000">
+            <input type="number" id="casa-f-credito" placeholder="180000" step="1000" inputmode="decimal">
           </div>
           <div class="form-group">
             <label>Já Pago / Sinal (€)</label>
-            <input type="number" id="casa-f-pago" placeholder="52000" step="500">
+            <input type="number" id="casa-f-pago" placeholder="52000" step="500" inputmode="decimal">
           </div>
         </div>
         <button class="btn" style="margin-top:12px" onclick="saveCasaDetails()">💾 Guardar Detalhes</button>
@@ -779,11 +803,11 @@
         <div class="form-grid" style="margin-bottom:12px">
           <div class="form-group">
             <label>Descrição</label>
-            <input type="text" id="extra-nome" placeholder="ex: Sofá, Cozinha, Obras...">
+            <input type="text" id="extra-nome" placeholder="ex: Sofá, Cozinha, Obras..." autocorrect="off">
           </div>
           <div class="form-group">
             <label>Custo estimado (€)</label>
-            <input type="number" id="extra-custo" placeholder="0" step="100">
+            <input type="number" id="extra-custo" placeholder="0" step="100" inputmode="decimal">
           </div>
           <div class="form-group" style="justify-content:flex-end">
             <label>&nbsp;</label>
@@ -814,30 +838,30 @@
       <div class="form-section">
         <h3>🏦 Contas</h3>
         <div class="form-grid">
-          <div class="form-group"><label>Conta à Ordem — Inês</label><input type="number" id="f-ordem-ines" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Conta à Ordem — Dany</label><input type="number" id="f-ordem-dany" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Conta Poupança — Inês</label><input type="number" id="f-poupanca-ines" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Conta Poupança — Dany</label><input type="number" id="f-poupanca-dany" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Conta Conjunta</label><input type="number" id="f-conjunta-ines" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Certificados — Inês</label><input type="number" id="f-cert-ines" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Certificados — Dany</label><input type="number" id="f-cert-dany" placeholder="0.00" step="0.01"></div>
+          <div class="form-group"><label>Conta à Ordem — Inês</label><input type="number" id="f-ordem-ines" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>Conta à Ordem — Dany</label><input type="number" id="f-ordem-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>Conta Poupança — Inês</label><input type="number" id="f-poupanca-ines" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>Conta Poupança — Dany</label><input type="number" id="f-poupanca-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>Conta Conjunta</label><input type="number" id="f-conjunta-ines" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>Certificados — Inês</label><input type="number" id="f-cert-ines" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>Certificados — Dany</label><input type="number" id="f-cert-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
         </div>
       </div>
       <div class="form-section">
         <h3>📈 Investimentos</h3>
         <div class="form-grid">
-          <div class="form-group"><label>TR Carteira — Inês</label><input type="number" id="f-tr-cart-ines" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>TR Carteira — Dany</label><input type="number" id="f-tr-cart-dany" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>TR Saldo — Inês</label><input type="number" id="f-tr-saldo-ines" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>TR Saldo — Dany</label><input type="number" id="f-tr-saldo-dany" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>PPR — Inês</label><input type="number" id="f-ppr-ines" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>PPR — Dany</label><input type="number" id="f-ppr-dany" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Ações Accenture — Inês</label><input type="number" id="f-acc-ines" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Ações Accenture — Dany</label><input type="number" id="f-acc-dany" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>DEGIRO — Dany</label><input type="number" id="f-degiro-dany" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>XTB — Dany</label><input type="number" id="f-xtb-dany" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Trust Wallet — Dany</label><input type="number" id="f-trust-dany" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>CGD Pensões — Inês</label><input type="number" id="f-cgd-ines" placeholder="0.00" step="0.01"></div>
+          <div class="form-group"><label>TR Carteira — Inês</label><input type="number" id="f-tr-cart-ines" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>TR Carteira — Dany</label><input type="number" id="f-tr-cart-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>TR Saldo — Inês</label><input type="number" id="f-tr-saldo-ines" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>TR Saldo — Dany</label><input type="number" id="f-tr-saldo-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>PPR — Inês</label><input type="number" id="f-ppr-ines" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>PPR — Dany</label><input type="number" id="f-ppr-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>Ações Accenture — Inês</label><input type="number" id="f-acc-ines" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>Ações Accenture — Dany</label><input type="number" id="f-acc-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>DEGIRO — Dany</label><input type="number" id="f-degiro-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>XTB — Dany</label><input type="number" id="f-xtb-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>Trust Wallet — Dany</label><input type="number" id="f-trust-dany" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+          <div class="form-group"><label>CGD Pensões — Inês</label><input type="number" id="f-cgd-ines" placeholder="0.00" step="0.01" inputmode="decimal"></div>
         </div>
       </div>
       <div class="form-section">
@@ -845,7 +869,7 @@
         <div class="form-group">
           <label>Observações (opcional)</label>
           <textarea id="f-nota" placeholder="ex: Recebi bónus, paguei carro, viagem a Paris..." rows="3"
-            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;outline:none;width:100%;resize:vertical;font-family:inherit"></textarea>
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:16px;outline:none;width:100%;font-family:inherit;-webkit-appearance:none;"></textarea>
         </div>
       </div>
       <button class="btn" id="btn-save" onclick="saveEntry()">💾 Guardar Registo</button>
@@ -862,7 +886,7 @@
     <h3>🏠 Objetivo de Casa</h3>
     <div class="form-group">
       <label>Valor necessário para entrada (€)</label>
-      <input type="number" id="goal-input" placeholder="ex: 100000" step="1000">
+      <input type="number" id="goal-input" placeholder="ex: 100000" step="1000" inputmode="decimal">
     </div>
     <div class="modal-btns">
       <button class="btn" style="margin-top:0" onclick="saveGoal()">Guardar</button>
@@ -878,7 +902,7 @@
     <p style="font-size:13px;color:var(--text2);margin-bottom:4px">Vais ser redirecionado para o login.</p>
     <div class="modal-btns">
       <button class="btn danger-btn" style="margin-top:0" onclick="confirmLogout()">Sair</button>
-      <button class="btn btn-outline" style="margin-top:0" onclick="document.getElementById('logout-modal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-outline" style="margin-top:0" onclick="document.getElementById('logout-modal').classList.remove('open');document.body.style.overflow=''">Cancelar</button>
     </div>
   </div>
 </div>
@@ -946,19 +970,20 @@ const dtLabel = d => {
 // ── Info buttons ─────────────────────────────────────────────
 function showInfo(title, desc) {
   const existing = document.getElementById('info-modal');
-  if (existing) existing.remove();
+  if (existing) { existing.remove(); document.body.style.overflow = ''; }
   const modal = document.createElement('div');
   modal.id = 'info-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));-webkit-overflow-scrolling:touch;';
   modal.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:380px;padding:22px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:380px;padding:22px;overflow-y:auto;max-height:calc(88dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
         <span style="font-size:15px;font-weight:700;color:var(--text);line-height:1.3">${title}</span>
-        <button onclick="document.getElementById('info-modal').remove()" style="background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:0;margin-left:12px;line-height:1">✕</button>
+        <button onclick="document.getElementById('info-modal').remove();document.body.style.overflow=''" style="background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:8px;margin:-8px;margin-left:4px;line-height:1;touch-action:manipulation">✕</button>
       </div>
       <p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0">${desc}</p>
     </div>`;
-  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  modal.addEventListener('click', e => { if (e.target === modal) { modal.remove(); document.body.style.overflow = ''; } });
+  document.body.style.overflow = 'hidden';
   document.body.appendChild(modal);
 }
 
@@ -1337,12 +1362,13 @@ async function doLogin() {
 
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
-function doLogout() { document.getElementById('logout-modal').classList.add('open'); }
+function doLogout() { document.getElementById('logout-modal').classList.add('open'); document.body.style.overflow='hidden'; }
 async function confirmLogout() {
   await sb.auth.signOut();
   cacheClear();
   _appLoaded = false;
   document.getElementById('logout-modal').classList.remove('open');
+  document.body.style.overflow = '';
   allData = [];
   show('auth');
 }
@@ -2252,11 +2278,14 @@ async function autoAssignTables() {
 function guestChip(g, tableId) {
   const catLabel = WEDDING_GUEST_CATS.find(c=>c.key===g.cat)?.label || g.cat;
   const tipoColor = { adulto:'#6c63ff', crianca:'#ffd166', bebe:'#ff9f43' }[g.tipo] || '#8b90b0';
+  const safeNome = g.nome.replace(/'/g,"\\'").replace(/"/g,'&quot;');
   return `<div draggable="true"
+    data-g-nome="${g.nome.replace(/"/g,'&quot;')}" data-g-cat="${g.cat}" data-g-tipo="${g.tipo||'adulto'}" data-g-table="${tableId}"
     ondragstart="dragStart(event,'${g.nome.replace(/'/g,"\\'")}','${g.cat}','${g.tipo||'adulto'}','${tableId}')"
     ondragend="dragEnd(event)"
-    style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;
-           font-size:12px;cursor:grab;display:flex;align-items:center;gap:6px;user-select:none">
+    ontouchstart="tcStart(event)" ontouchmove="tcMove(event)" ontouchend="tcEnd(event)"
+    style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;
+           font-size:12px;cursor:grab;display:flex;align-items:center;gap:6px;user-select:none;touch-action:none;-webkit-user-select:none">
     <span style="width:8px;height:8px;border-radius:50%;background:${tipoColor};flex-shrink:0"></span>
     <span>${g.nome}</span>
     <span style="font-size:10px;color:var(--text2)">${catLabel}</span>
@@ -2291,7 +2320,7 @@ function renderMesasTab() {
     const statusColor = warn ? 'var(--red)' : full ? 'var(--yellow)' : 'var(--green)';
     const isNoivos = t.id === 'noivos';
     return `
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px"
+      <div data-table-id="${t.id}" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px"
         ondragover="event.preventDefault()" ondrop="dropGuest(event,'${t.id}')">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <span style="font-size:14px;font-weight:700">${isNoivos?'💍 ':' '}${t.nome}</span>
@@ -2388,7 +2417,7 @@ function renderGuestTab() {
               onfocus="this.style.borderBottomColor='var(--accent)'"
               onblur="this.style.borderBottomColor='transparent';renameGuest('${c.key}',${i},this.value)"
               title="Clica para editar o nome"
-              style="font-size:13px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);outline:none;width:100%;padding:1px 2px;border-radius:4px;transition:border-color .15s">
+              style="font-size:16px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);outline:none;width:100%;padding:1px 2px;border-radius:4px;transition:border-color .15s">
             ${tipoBadge(p.tipo)}
             <span onclick="togglePresenca('${c.key}',${i})" style="cursor:pointer" title="Clica para mudar">${presencaBadge(p.presenca||'pendente')}</span>
             <button onclick="moveGuest('${c.key}',${i},-1)" ${i===0?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===0?'.3':'1'}">▲</button>
@@ -2397,7 +2426,7 @@ function renderGuestTab() {
           </div>
           <input type="text" value="${(p.obs||'').replace(/"/g,'&quot;')}" placeholder="Observações (alergias, necessidades...)"
             onchange="updateGuestObs('${c.key}',${i},this.value)"
-            style="margin-top:4px;width:100%;background:transparent;border:none;border-bottom:1px dashed var(--border);color:var(--text2);font-size:11px;padding:3px 0;outline:none;${p.obs?'color:var(--text)':''}">
+            style="margin-top:4px;width:100%;background:transparent;border:none;border-bottom:1px dashed var(--border);color:var(--text2);font-size:16px;padding:3px 0;outline:none;${p.obs?'color:var(--text)':''}">
         </div>`).join('')
       : '<p style="font-size:12px;color:var(--text2);padding:8px 0">Sem convidados.</p>';
 
@@ -2412,10 +2441,10 @@ function renderGuestTab() {
         </div>
         ${rows}
         <div style="display:grid;grid-template-columns:1fr 110px 72px;gap:8px;margin-top:12px">
-          <input type="text" id="gn-${c.key}" placeholder="Nome do convidado"
-            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;width:100%"
+          <input type="text" id="gn-${c.key}" placeholder="Nome do convidado" autocorrect="off"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:16px;outline:none;width:100%;-webkit-appearance:none;"
             onkeydown="if(event.key==='Enter')addGuest('${c.key}')">
-          <select id="gt-${c.key}" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);font-size:13px;outline:none">
+          <select id="gt-${c.key}" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);font-size:16px;outline:none;-webkit-appearance:none;appearance:none">
             <option value="adulto">Adulto</option>
             <option value="crianca">Criança</option>
             <option value="bebe">Bebé</option>
@@ -2565,9 +2594,9 @@ function renderWeddingTab() {
 
   // Lista de itens
   const inp = (val, ph, fn) =>
-    `<div style="position:relative"><input type="number" value="${val||''}" placeholder="${ph}"
+    `<div style="position:relative"><input type="number" value="${val||''}" placeholder="${ph}" inputmode="decimal"
       onchange="${fn}" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
-      padding:8px 28px 8px 10px;color:var(--text);font-size:13px;outline:none;width:100%">
+      padding:8px 28px 8px 10px;color:var(--text);font-size:16px;outline:none;width:100%;-webkit-appearance:none;">
       <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px">€</span></div>`;
 
   const list = document.getElementById('w-items-list');
@@ -2924,6 +2953,7 @@ function switchTab(tab, btn) {
   document.getElementById('tab-'+tab).classList.add('active');
   btn.classList.add('active');
   activeTab = tab;
+  window.scrollTo({ top: 0, behavior: 'instant' });
   if (tab==='evolucao') { initEvolucao(); initYearCompare(); }
   if (tab==='ativos')   initAtivos();
   if (tab==='ines')     initPerson('ines');
@@ -2933,8 +2963,8 @@ function switchTab(tab, btn) {
 }
 
 // ── Goal ──────────────────────────────────────────────────────
-function openGoalModal()  { document.getElementById('goal-input').value=goal; document.getElementById('goal-modal').classList.add('open'); }
-function closeGoalModal() { document.getElementById('goal-modal').classList.remove('open'); }
+function openGoalModal()  { document.getElementById('goal-input').value=goal; document.getElementById('goal-modal').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeGoalModal() { document.getElementById('goal-modal').classList.remove('open'); document.body.style.overflow=''; }
 async function saveGoal() {
   const v = parseFloat(document.getElementById('goal-input').value);
   if (!isNaN(v) && v>0) {
@@ -3393,10 +3423,30 @@ async function partilharResumo() {
   try {
     const canvas = await html2canvas(card, { backgroundColor: null, scale: 2 });
     card.style.display = 'none';
-    const link = document.createElement('a');
-    link.download = `financas-${last.date}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    const filename = `financas-${last.date}.png`;
+
+    // iOS/mobile: usar Web Share API com ficheiro
+    if (navigator.share && navigator.canShare) {
+      canvas.toBlob(async blob => {
+        const file = new File([blob], filename, { type: 'image/png' });
+        try {
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: 'Finanças Dany & Inês', text: `Resumo de ${dtLabel(last.date)}` });
+            return;
+          }
+        } catch(shareErr) {
+          if (shareErr.name === 'AbortError') return;
+        }
+        // Fallback: abrir imagem em nova aba
+        window.open(URL.createObjectURL(blob), '_blank');
+      }, 'image/png');
+    } else {
+      // Desktop: download direto
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
   } catch(e) {
     card.style.display = 'none';
     alert('Erro ao gerar imagem. Tenta fazer screenshot manual.');
@@ -3470,6 +3520,54 @@ function exportMesasPDF() {
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`);
   printWin.document.close();
+}
+
+// ── Touch Drag-and-Drop para mesas (iOS) ─────────────────────
+let _tcClone = null, _tcOrigin = null, _tcOffX = 0, _tcOffY = 0;
+
+function tcStart(e) {
+  const el = e.currentTarget;
+  _dragGuest = {
+    nome: el.dataset.gNome,
+    cat:  el.dataset.gCat,
+    tipo: el.dataset.gTipo,
+    fromTable: el.dataset.gTable
+  };
+  _tcOrigin = el;
+  const r = el.getBoundingClientRect();
+  const t = e.touches[0];
+  _tcOffX = t.clientX - r.left;
+  _tcOffY = t.clientY - r.top;
+  _tcClone = el.cloneNode(true);
+  Object.assign(_tcClone.style, {
+    position: 'fixed', zIndex: '9999', pointerEvents: 'none',
+    opacity: '0.85', width: r.width + 'px', transition: 'none',
+    left: (t.clientX - _tcOffX) + 'px', top: (t.clientY - _tcOffY) + 'px',
+    boxShadow: '0 6px 20px rgba(0,0,0,.5)', borderRadius: '8px'
+  });
+  document.body.appendChild(_tcClone);
+  el.style.opacity = '0.3';
+  e.stopPropagation();
+}
+
+function tcMove(e) {
+  if (!_tcClone) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  _tcClone.style.left = (t.clientX - _tcOffX) + 'px';
+  _tcClone.style.top  = (t.clientY - _tcOffY) + 'px';
+}
+
+function tcEnd(e) {
+  if (!_tcClone) return;
+  _tcClone.style.display = 'none'; // esconder antes de elementFromPoint
+  const t = e.changedTouches[0];
+  const dropEl = document.elementFromPoint(t.clientX, t.clientY);
+  _tcClone.remove(); _tcClone = null;
+  if (_tcOrigin) { _tcOrigin.style.opacity = '1'; _tcOrigin = null; }
+  const tableEl = dropEl?.closest('[data-table-id]');
+  if (tableEl) dropGuest({ preventDefault: () => {} }, tableEl.dataset.tableId);
+  else _dragGuest = null;
 }
 
 // ── PWA ───────────────────────────────────────────────────────
