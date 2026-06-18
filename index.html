@@ -231,12 +231,20 @@
   }
 
   /* Top nav bar em vez de bottom nav */
-  body.desktop .nav {
-    position: sticky;
-    top: var(--header-h);
+  body.desktop .header {
+    position: fixed !important;
+    top: 0 !important;
     left: 0;
     right: 0;
-    bottom: unset;
+    padding: 14px 24px !important;
+  }
+
+  body.desktop .nav {
+    position: fixed !important;
+    top: var(--header-h, 61px) !important;
+    bottom: auto !important;
+    left: 0;
+    right: 0;
     width: 100%;
     flex-direction: row;
     overflow-x: auto;
@@ -244,6 +252,7 @@
     border-top: none;
     border-bottom: 0.5px solid rgba(255,255,255,0.08);
     padding: 0 16px;
+    padding-bottom: 0 !important;
     z-index: 150;
   }
 
@@ -270,10 +279,10 @@
   body.desktop .nav-btn.active .tab-icon { filter: drop-shadow(0 0 6px rgba(108,99,255,.55)); }
   body.desktop .nav-btn:hover { color: var(--text); background: none; }
 
-  /* Conteúdo sem margem lateral */
+  /* Conteúdo abaixo do header + nav fixos */
   body.desktop .content {
     margin: 0 auto;
-    padding: 28px 40px 40px;
+    padding: calc(var(--header-h, 61px) + var(--nav-h, 44px) + 24px) 40px 40px;
     max-width: 960px;
   }
 
@@ -3784,7 +3793,9 @@ function detectDevice() {
   document.body.classList.toggle('desktop', isDesktop);
   requestAnimationFrame(() => {
     const h = document.querySelector('.header');
+    const n = document.querySelector('.nav');
     if (h) document.documentElement.style.setProperty('--header-h', h.offsetHeight + 'px');
+    if (n) document.documentElement.style.setProperty('--nav-h', n.offsetHeight + 'px');
   });
 }
 detectDevice();
