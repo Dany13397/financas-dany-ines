@@ -1088,7 +1088,7 @@ let activeTab = 'dashboard';
 const charts  = {};
 
 // ── Formatters ───────────────────────────────────────────────
-let privacyMode = false;
+let privacyMode = localStorage.getItem('privacyMode') === 'true';
 const _fmt = v => v == null ? '—' : new Intl.NumberFormat('pt-PT', {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
 const fmt = v => privacyMode ? '••••' : _fmt(v);
 const _fmtShort = v => { if (!v) return '0€'; return v >= 1000 ? (v/1000).toFixed(1)+'k€' : Math.round(v)+'€'; };
@@ -1407,6 +1407,7 @@ function boot() {
     document.getElementById('user-badge').textContent = name.charAt(0).toUpperCase();
     document.getElementById('user-badge').title = email + ' — Clica para sair';
     show('app');
+    applyPrivacy();
     initDashboard();
     checkMigration();
     _appLoaded = true;
@@ -1456,6 +1457,7 @@ async function loadApp(session) {
   document.getElementById('user-badge').title = email + ' — Clica para sair';
 
   show('app');
+  applyPrivacy();
   initDashboard();
   checkMigration();
   calcCenario();
@@ -1479,6 +1481,7 @@ function show(screen) {
     if (s === 'app') el.style.display = screen === 'app' ? 'block' : 'none';
     else el.style.display = screen === s ? 'flex' : 'none';
   });
+  if (screen === 'app') requestAnimationFrame(detectDevice);
 }
 
 async function doLogin() {
@@ -3082,12 +3085,18 @@ function renderCasaTab() {
 }
 
 // ── Modo Privacidade ─────────────────────────────────────────
-function togglePrivacy() {
-  privacyMode = !privacyMode;
+function applyPrivacy() {
   const btn = document.getElementById('privacy-btn');
+  if (!btn) return;
   btn.textContent = privacyMode ? '🙈' : '👁️';
   btn.title       = privacyMode ? 'Mostrar valores' : 'Esconder valores';
   btn.style.background = privacyMode ? 'rgba(108,99,255,.3)' : '';
+}
+
+function togglePrivacy() {
+  privacyMode = !privacyMode;
+  localStorage.setItem('privacyMode', privacyMode);
+  applyPrivacy();
 
   // Re-renderiza o tab atual
   if (activeTab === 'dashboard') initDashboard();
@@ -3789,13 +3798,14 @@ document.addEventListener('touchend', e => {
 
 // ── Device detection ─────────────────────────────────────────
 function detectDevice() {
-  const isDesktop = window.innerWidth >= 1024 && !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
+  const isDesktop = window.innerWidth >= 1024;
   document.body.classList.toggle('desktop', isDesktop);
+  // Mede alturas depois do DOM estar visível
   requestAnimationFrame(() => {
     const h = document.querySelector('.header');
     const n = document.querySelector('.nav');
-    if (h) document.documentElement.style.setProperty('--header-h', h.offsetHeight + 'px');
-    if (n) document.documentElement.style.setProperty('--nav-h', n.offsetHeight + 'px');
+    if (h && h.offsetHeight) document.documentElement.style.setProperty('--header-h', h.offsetHeight + 'px');
+    if (n && n.offsetHeight) document.documentElement.style.setProperty('--nav-h', n.offsetHeight + 'px');
   });
 }
 detectDevice();
