@@ -1087,6 +1087,25 @@ let goal      = 100000;
 let activeTab = 'dashboard';
 const charts  = {};
 
+// ── Lazy tab loading ─────────────────────────────────────────
+const _dirtyTabs = new Set(['dashboard','evolucao','ativos','ines','dany','casamento','casa']);
+function _markEntriesDirty() { ['dashboard','evolucao','ativos','ines','dany','casa'].forEach(t => _dirtyTabs.add(t)); }
+function _markWeddingDirty() { _dirtyTabs.add('casamento'); }
+function _markCasaDirty()    { _dirtyTabs.add('casa'); }
+function _markClean(tab)     { _dirtyTabs.delete(tab); }
+
+// ── Sync indicator ───────────────────────────────────────────
+let _lastSyncAt = null;
+function updateSyncLabel() {
+  const el = document.getElementById('last-update');
+  if (!el || !_lastSyncAt) return;
+  const mins = Math.floor((Date.now() - _lastSyncAt) / 60000);
+  if (mins < 1)  el.textContent = 'Sincronizado agora';
+  else if (mins < 60) el.textContent = `Sincronizado há ${mins} min`;
+  else el.textContent = `Sincronizado há ${Math.floor(mins / 60)}h`;
+}
+setInterval(updateSyncLabel, 30000);
+
 // ── Formatters ───────────────────────────────────────────────
 let privacyMode = localStorage.getItem('privacyMode') === 'true';
 const _fmt = v => v == null ? '—' : new Intl.NumberFormat('pt-PT', {style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
@@ -1408,7 +1427,7 @@ function boot() {
     document.getElementById('user-badge').title = email + ' — Clica para sair';
     show('app');
     applyPrivacy();
-    initDashboard();
+    initDashboard(); _markClean('dashboard');
     checkMigration();
     _appLoaded = true;
     // Refresh tudo em segundo plano
@@ -1458,7 +1477,7 @@ async function loadApp(session) {
 
   show('app');
   applyPrivacy();
-  initDashboard();
+  initDashboard(); _markClean('dashboard');
   checkMigration();
   calcCenario();
 
@@ -1553,18 +1572,17 @@ async function fetchEntriesFromDB() {
   if (!error && data) {
     allData = data.map(r => ({ date: r.date, assets: r.assets, summary: r.summary, nota: r.nota || '' }));
     cacheSet(CACHE_ENTRIES, allData);
+    _lastSyncAt = Date.now();
+    updateSyncLabel();
   }
 }
 
 async function refreshEntriesInBackground() {
   try {
     await fetchEntriesFromDB();
-    initDashboard();
-    if (activeTab === 'evolucao') initEvolucao();
-    if (activeTab === 'ativos')   initAtivos();
-    if (activeTab === 'ines')     initPerson('ines');
-    if (activeTab === 'dany')     initPerson('dany');
-    if (activeTab === 'casa')     renderCasaTab();
+    _markEntriesDirty();
+    initDashboard(); _markClean('dashboard');
+    if (activeTab !== 'dashboard') _renderActiveTab();
   } catch(e) {}
 }
 
@@ -1633,9 +1651,9 @@ async function saveEntry() {
     document.getElementById('save-success').style.display = 'block';
     setTimeout(() => document.getElementById('save-success').style.display='none', 3000);
     await fetchData();
-    initDashboard();
-    if (activeTab === 'evolucao') initEvolucao();
-    if (activeTab === 'ativos') initAtivos();
+    _markEntriesDirty();
+    initDashboard(); _markClean('dashboard');
+    if (activeTab !== 'dashboard') _renderActiveTab();
   }
 }
 
@@ -1753,9 +1771,9 @@ async function syncFromExcel() {
     }
 
     await fetchData();
-    initDashboard();
-    if (activeTab === 'evolucao') initEvolucao();
-    if (activeTab === 'ativos')   initAtivos();
+    _markEntriesDirty();
+    initDashboard(); _markClean('dashboard');
+    if (activeTab !== 'dashboard') _renderActiveTab();
 
     label.textContent = '✅ Sync concluído';
     setTimeout(() => { label.textContent = 'Sync Excel'; btn.disabled = false; }, 4000);
@@ -1908,7 +1926,7 @@ function initDashboard() {
   document.getElementById('progress-desc').textContent    = falta > 0
     ? `Faltam ${fmt(falta)} · escritura ${fmt(naEscritura)} + casamento ${fmt(weddingNet)}${extrasCasa>0?' + extras '+fmt(extrasCasa):''}`
     : '🎉 Objetivo atingido!';
-  document.getElementById('last-update').textContent = 'Último registo: '+dtLabel(last.date);
+  if (!_lastSyncAt) document.getElementById('last-update').textContent = 'Último registo: '+dtLabel(last.date);
   initInfoButtons();
 
   // Previsão rápida para o card de progresso (últimos 6 meses)
@@ -2653,7 +2671,11 @@ function tipoBadge(tipo) {
 }
 
 async function refreshWeddingInBackground() {
-  try { await fetchWeddingFromDB(); renderWeddingTab(); } catch(e) {}
+  try {
+    await fetchWeddingFromDB();
+    _markWeddingDirty();
+    if (activeTab === 'casamento') { renderWeddingTab(); _markClean('casamento'); }
+  } catch(e) {}
 }
 
 async function saveWeddingConfig() {
@@ -2848,7 +2870,11 @@ async function fetchConfigFromDB() {
 }
 
 async function refreshConfigInBackground() {
-  try { await fetchConfigFromDB(); } catch(e) {}
+  try {
+    await fetchConfigFromDB();
+    _markCasaDirty();
+    if (activeTab === 'casa') { renderCasaTab(); calcSimulador(); calcCenario(); _markClean('casa'); }
+  } catch(e) {}
 }
 
 async function saveCasaConfig() {
@@ -3093,19 +3119,23 @@ function applyPrivacy() {
   btn.style.background = privacyMode ? 'rgba(108,99,255,.3)' : '';
 }
 
+function _renderActiveTab() {
+  if (activeTab === 'dashboard') { initDashboard(); _markClean('dashboard'); }
+  if (activeTab === 'evolucao')  { initEvolucao(); initYearCompare(); _markClean('evolucao'); }
+  if (activeTab === 'ativos')    { initAtivos(); _markClean('ativos'); }
+  if (activeTab === 'ines')      { initPerson('ines'); _markClean('ines'); }
+  if (activeTab === 'dany')      { initPerson('dany'); _markClean('dany'); }
+  if (activeTab === 'casa')      { renderCasaTab(); calcSimulador(); calcCenario(); _markClean('casa'); }
+  if (activeTab === 'casamento') { renderWeddingTab(); _markClean('casamento'); }
+}
+
 function togglePrivacy() {
   privacyMode = !privacyMode;
   localStorage.setItem('privacyMode', privacyMode);
   applyPrivacy();
-
-  // Re-renderiza o tab atual
-  if (activeTab === 'dashboard') initDashboard();
-  if (activeTab === 'evolucao')  { initEvolucao(); initYearCompare(); }
-  if (activeTab === 'ativos')    initAtivos();
-  if (activeTab === 'ines')      initPerson('ines');
-  if (activeTab === 'dany')      initPerson('dany');
-  if (activeTab === 'casa')      { renderCasaTab(); calcSimulador(); calcCenario(); }
-  if (activeTab === 'casamento') renderWeddingTab();
+  // Marca todos os tabs sujos (valores mudam em todos) e re-renderiza o atual
+  _markEntriesDirty(); _markWeddingDirty(); _markCasaDirty();
+  _renderActiveTab();
 }
 
 // ── Navigation ────────────────────────────────────────────────
@@ -3119,12 +3149,15 @@ function switchTab(tab, btn) {
   activeTab = tab;
   document.getElementById('header-title').textContent = _tabTitles[tab] || tab;
   window.scrollTo({ top: 0, behavior: 'instant' });
-  if (tab==='evolucao') { initEvolucao(); initYearCompare(); }
-  if (tab==='ativos')   initAtivos();
-  if (tab==='ines')     initPerson('ines');
-  if (tab==='dany')     initPerson('dany');
-  if (tab==='casamento') renderWeddingTab();
-  if (tab==='casa')      { renderCasaTab(); calcSimulador(); calcCenario(); }
+  if (_dirtyTabs.has(tab)) {
+    if (tab==='evolucao')  { initEvolucao(); initYearCompare(); }
+    if (tab==='ativos')    initAtivos();
+    if (tab==='ines')      initPerson('ines');
+    if (tab==='dany')      initPerson('dany');
+    if (tab==='casamento') renderWeddingTab();
+    if (tab==='casa')      { renderCasaTab(); calcSimulador(); calcCenario(); }
+    _markClean(tab);
+  }
 }
 
 // ── Goal ──────────────────────────────────────────────────────
