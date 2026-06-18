@@ -230,51 +230,51 @@
     z-index: 200;
   }
 
-  /* Sidebar em vez de bottom nav */
+  /* Top nav bar em vez de bottom nav */
   body.desktop .nav {
-    position: fixed;
-    left: 0;
+    position: sticky;
     top: var(--header-h);
-    bottom: 0;
-    width: 220px;
-    flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
+    left: 0;
+    right: 0;
+    bottom: unset;
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
     border-top: none;
-    border-right: 0.5px solid rgba(255,255,255,0.08);
-    padding: 8px 0 16px;
-    scrollbar-width: none;
+    border-bottom: 0.5px solid rgba(255,255,255,0.08);
+    padding: 0 16px;
+    z-index: 150;
   }
-  body.desktop .nav::-webkit-scrollbar { display: none; }
 
   body.desktop .nav-btn {
     flex-direction: row;
-    justify-content: flex-start;
     min-width: unset;
-    width: calc(100% - 16px);
-    margin: 2px 8px;
     padding: 10px 16px;
-    gap: 12px;
-    border-radius: 10px;
+    gap: 8px;
+    border-radius: 0;
     font-size: 13px;
     color: var(--text2);
-    transition: background .15s, color .15s;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
   }
-  body.desktop .tab-icon { font-size: 18px; line-height: 1; }
+  body.desktop .tab-icon { font-size: 16px; line-height: 1; }
   body.desktop .tab-label { font-size: 13px; font-weight: 500; letter-spacing: 0; }
 
   body.desktop .nav-btn.active {
-    background: rgba(108,99,255,0.15);
     color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: none;
   }
   body.desktop .nav-btn.active .tab-icon { filter: drop-shadow(0 0 6px rgba(108,99,255,.55)); }
-  body.desktop .nav-btn:hover { background: var(--surface2); color: var(--text); }
+  body.desktop .nav-btn:hover { color: var(--text); background: none; }
 
-  /* Área de conteúdo deslocada para a direita da sidebar */
+  /* Conteúdo sem margem lateral */
   body.desktop .content {
-    margin-left: 220px;
+    margin: 0 auto;
     padding: 28px 40px 40px;
-    max-width: none;
+    max-width: 960px;
   }
 
   /* Grids com mais colunas */
@@ -292,11 +292,13 @@
   }
   body.desktop .modal-handle { display: none; }
 
-  /* Toast posicionado acima da sidebar */
+  /* Toast posicionado no canto inferior direito */
   body.desktop #undo-toast {
     bottom: 20px;
-    left: 240px;
+    left: 20px;
     right: 20px;
+    max-width: 500px;
+    margin: 0 auto;
   }
 
   /* Sem safe-area insets no auth */
