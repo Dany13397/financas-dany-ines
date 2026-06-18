@@ -218,6 +218,98 @@
   .undo-bar{position:absolute;bottom:0;left:0;height:3px;background:var(--accent);border-radius:0;width:100%;transform-origin:left;animation:undo-shrink 4s linear forwards;}
   @keyframes undo-shrink{to{transform:scaleX(0)}}
 
+  /* ── Desktop Layout ────────────────────────────────────────── */
+  :root { --header-h: 57px; }
+
+  body.desktop { overflow-x: unset; }
+
+  body.desktop .header {
+    padding: 14px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+
+  /* Sidebar em vez de bottom nav */
+  body.desktop .nav {
+    position: fixed;
+    left: 0;
+    top: var(--header-h);
+    bottom: 0;
+    width: 220px;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-top: none;
+    border-right: 0.5px solid rgba(255,255,255,0.08);
+    padding: 8px 0 16px;
+    scrollbar-width: none;
+  }
+  body.desktop .nav::-webkit-scrollbar { display: none; }
+
+  body.desktop .nav-btn {
+    flex-direction: row;
+    justify-content: flex-start;
+    min-width: unset;
+    width: calc(100% - 16px);
+    margin: 2px 8px;
+    padding: 10px 16px;
+    gap: 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text2);
+    transition: background .15s, color .15s;
+  }
+  body.desktop .tab-icon { font-size: 18px; line-height: 1; }
+  body.desktop .tab-label { font-size: 13px; font-weight: 500; letter-spacing: 0; }
+
+  body.desktop .nav-btn.active {
+    background: rgba(108,99,255,0.15);
+    color: var(--accent);
+  }
+  body.desktop .nav-btn.active .tab-icon { filter: drop-shadow(0 0 6px rgba(108,99,255,.55)); }
+  body.desktop .nav-btn:hover { background: var(--surface2); color: var(--text); }
+
+  /* Área de conteúdo deslocada para a direita da sidebar */
+  body.desktop .content {
+    margin-left: 220px;
+    padding: 28px 40px 40px;
+    max-width: none;
+  }
+
+  /* Grids com mais colunas */
+  body.desktop .cards-grid { grid-template-columns: repeat(4,1fr); }
+  body.desktop .form-grid { grid-template-columns: repeat(3,1fr); }
+  body.desktop .pie-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Modal como popup centrado */
+  body.desktop .modal-bg { align-items: center; }
+  body.desktop .modal {
+    border-radius: 20px;
+    max-width: 560px;
+    padding: 0 28px 28px;
+    max-height: 85vh;
+  }
+  body.desktop .modal-handle { display: none; }
+
+  /* Toast posicionado acima da sidebar */
+  body.desktop #undo-toast {
+    bottom: 20px;
+    left: 240px;
+    right: 20px;
+  }
+
+  /* Sem safe-area insets no auth */
+  body.desktop #screen-auth { padding: 60px 20px; }
+
+  /* Hover states nos cards */
+  body.desktop .card { transition: border-color .15s; }
+  body.desktop .card:hover { border-color: rgba(108,99,255,.4); }
+
+  /* Tabelas com mais espaço */
+  body.desktop .asset-table { font-size: 13px; }
+  body.desktop .asset-table th, body.desktop .asset-table td { padding: 12px 16px; }
+
   /* ── Print / PDF ── */
   @media print {
     body { background:#fff !important; color:#000 !important; }
@@ -3683,6 +3775,18 @@ document.addEventListener('touchend', e => {
   switchTab(_swipeTabs[next], btns[next]);
   btns[next]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 }, { passive: true });
+
+// ── Device detection ─────────────────────────────────────────
+function detectDevice() {
+  const isDesktop = window.innerWidth >= 1024 && !('ontouchstart' in window) && navigator.maxTouchPoints === 0;
+  document.body.classList.toggle('desktop', isDesktop);
+  requestAnimationFrame(() => {
+    const h = document.querySelector('.header');
+    if (h) document.documentElement.style.setProperty('--header-h', h.offsetHeight + 'px');
+  });
+}
+detectDevice();
+window.addEventListener('resize', detectDevice);
 
 // ── PWA ───────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
