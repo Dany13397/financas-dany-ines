@@ -1747,12 +1747,23 @@ async function syncFromExcel() {
 
     for (const mc of mesesCols) {
       const assets = {}, summary = {};
+      const accentureHits = [];
       for (const row of rows.slice(5)) {
         if (!row || row.length <= mc.ci) continue;
         const nomeRaw = (row[1] || '').trim();
         if (!nomeRaw) continue;
         const vi = parseValor(row[mc.ci]);
         const vd = parseValor(row[mc.cd] || '');
+
+        if (nomeRaw.toLowerCase().includes('accenture')) {
+          accentureHits.push({
+            nome: nomeRaw,
+            rawI: row[mc.ci] ?? '(vazio)',
+            rawD: row[mc.cd] ?? '(vazio)',
+            parsedI: vi,
+            parsedD: vd
+          });
+        }
 
         if (RESUMO_KEYS.has(nomeRaw)) {
           const viR = parseValor(row[mc.ci], true);
@@ -1785,7 +1796,7 @@ async function syncFromExcel() {
       });
 
       const { error } = await sb.from('entries').upsert({ date: mc.date, assets, summary }, { onConflict: 'date' });
-      if (!error) relatorio.push({ date: mc.date, novo: !jaExistia, diffs });
+      if (!error) relatorio.push({ date: mc.date, novo: !jaExistia, diffs, accentureHits, ci: mc.ci, cd: mc.cd });
     }
 
     await fetchData();
@@ -1836,6 +1847,30 @@ function mostrarRelatorioSync(relatorio) {
         }
       }
 
+      let debugAcc = '';
+      if (r.accentureHits && r.accentureHits.length) {
+        const hitLinhas = r.accentureHits.map(h => `
+          <tr>
+            <td style="padding:3px 6px 3px 0;font-size:11px;color:#c8a0ff;font-family:monospace">${h.nome}</td>
+            <td style="padding:3px 6px;font-size:11px;color:#ffd88a;font-family:monospace;text-align:right">"${h.rawI}" → ${h.parsedI ?? 'null'}</td>
+            <td style="padding:3px 0;font-size:11px;color:#ffd88a;font-family:monospace;text-align:right">"${h.rawD}" → ${h.parsedD ?? 'null'}</td>
+          </tr>`).join('');
+        debugAcc = `
+          <details style="margin-top:8px">
+            <summary style="font-size:11px;color:var(--text2);cursor:pointer">🔍 Debug Accenture (cols ${r.ci}/${r.cd})</summary>
+            <table style="width:100%;border-collapse:collapse;margin-top:6px">
+              <thead><tr>
+                <th style="font-size:10px;color:var(--text2);text-align:left;padding-bottom:3px">Nome na folha</th>
+                <th style="font-size:10px;color:var(--ines);text-align:right;padding-bottom:3px">Inês (raw→parsed)</th>
+                <th style="font-size:10px;color:var(--dany);text-align:right;padding-bottom:3px">Dany (raw→parsed)</th>
+              </tr></thead>
+              <tbody>${hitLinhas}</tbody>
+            </table>
+          </details>`;
+      } else if (r.accentureHits) {
+        debugAcc = `<p style="font-size:11px;color:var(--text2);margin-top:6px">🔍 Nenhuma linha "accenture" encontrada na folha para este mês.</p>`;
+      }
+
       corpo += `
         <div style="margin-bottom:20px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -1850,6 +1885,7 @@ function mostrarRelatorioSync(relatorio) {
             </tr></thead>
             <tbody>${linhas}</tbody>
           </table>
+          ${debugAcc}
         </div>`;
     }
   }
