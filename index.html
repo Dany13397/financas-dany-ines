@@ -1752,6 +1752,7 @@ async function syncFromExcel() {
         if (!row || row.length <= mc.ci) continue;
         const nomeRaw = (row[1] || '').trim();
         if (!nomeRaw) continue;
+        if (nomeRaw.toLowerCase().startsWith('legenda')) break;
         const vi = parseValor(row[mc.ci]);
         const vd = parseValor(row[mc.cd] || '');
 
