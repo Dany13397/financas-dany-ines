@@ -502,6 +502,9 @@
         </div>
       </div>
 
+      <!-- Resumo Mensal -->
+      <div class="chart-card" id="resumo-mensal-card" style="display:none"></div>
+
       <!-- Taxa de poupança -->
       <!-- Card de partilha (capturado pelo html2canvas) -->
       <div id="share-card" style="display:none;background:linear-gradient(135deg,#1a1d27,#22263a);border:1px solid #2e3350;border-radius:16px;padding:24px;color:#e8eaf6;font-family:-apple-system,sans-serif">
@@ -1790,6 +1793,8 @@ async function syncFromExcel() {
       // Calcular diferenças ativo a ativo
       const diffs = [];
       const todosAtivos = new Set([...Object.keys(assets), ...(entradaAnterior ? Object.keys(entradaAnterior.assets || {}) : [])]);
+      const isAnomalo = (novo, ant) =>
+        ant !== null && ant > 50 && novo !== null && (novo / ant > 5 || novo / ant < 0.15);
       todosAtivos.forEach(k => {
         const novoI = assets[k]?.ines ?? null;
         const novoD = assets[k]?.dany ?? null;
@@ -1798,7 +1803,8 @@ async function syncFromExcel() {
         const mudouI = novoI !== antI;
         const mudouD = novoD !== antD;
         if (mudouI || mudouD) {
-          diffs.push({ ativo: k, antI, antD, novoI, novoD, mudouI, mudouD });
+          diffs.push({ ativo: k, antI, antD, novoI, novoD, mudouI, mudouD,
+            anomI: isAnomalo(novoI, antI), anomD: isAnomalo(novoD, antD) });
         }
       });
 
@@ -1842,19 +1848,37 @@ function mostrarRelatorioSync(relatorio, erroMsg) {
         ? '<span style="background:#43d68a22;color:#43d68a;font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600">NOVO</span>'
         : '<span style="background:#6c63ff22;color:#6c63ff;font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600">ATUALIZADO</span>';
 
+      const anomalias = r.diffs.filter(d => d.anomI || d.anomD);
+      let alertaAnomalia = '';
+      if (anomalias.length) {
+        const lista = anomalias.map(d => {
+          const partes = [];
+          if (d.anomI) partes.push(`Inês: ${fv(d.antI)} → ${fv(d.novoI)}`);
+          if (d.anomD) partes.push(`Dany: ${fv(d.antD)} → ${fv(d.novoD)}`);
+          return `<li style="margin:3px 0"><strong>${d.ativo}</strong> — ${partes.join(', ')}</li>`;
+        }).join('');
+        alertaAnomalia = `<div style="background:#ff9f4322;border:1px solid #ff9f4366;border-radius:8px;padding:10px 12px;margin-bottom:10px">
+          <p style="font-size:12px;font-weight:700;color:#ff9f43;margin:0 0 6px">⚠️ Variações anómalas detetadas (>5× ou <15% do valor anterior)</p>
+          <ul style="font-size:12px;color:var(--text);margin:0;padding-left:16px">${lista}</ul>
+          <p style="font-size:11px;color:var(--text2);margin:6px 0 0">Verifica se estes valores estão corretos no Excel antes de continuar.</p>
+        </div>`;
+      }
+
       let linhas = '';
       if (!r.diffs.length) {
         linhas = '<tr><td colspan="3" style="color:var(--text2);font-size:12px;padding:6px 0">Sem alterações nos ativos.</td></tr>';
       } else {
         for (const d of r.diffs) {
+          const warn = d.anomI || d.anomD ? '⚠️ ' : '';
+          const rowBg = (d.anomI || d.anomD) ? 'background:#ff9f4311;' : '';
           const celulaI = d.mudouI
-            ? `<span style="color:var(--text2);text-decoration:line-through;font-size:11px">${fv(d.antI)}</span> → <strong style="color:#43d68a">${fv(d.novoI)}</strong>`
+            ? `<span style="color:var(--text2);text-decoration:line-through;font-size:11px">${fv(d.antI)}</span> → <strong style="color:${d.anomI?'#ff9f43':'#43d68a'}">${fv(d.novoI)}</strong>`
             : `<span style="color:var(--text2)">${fv(d.novoI)}</span>`;
           const celulaD = d.mudouD
-            ? `<span style="color:var(--text2);text-decoration:line-through;font-size:11px">${fv(d.antD)}</span> → <strong style="color:#43d68a">${fv(d.novoD)}</strong>`
+            ? `<span style="color:var(--text2);text-decoration:line-through;font-size:11px">${fv(d.antD)}</span> → <strong style="color:${d.anomD?'#ff9f43':'#43d68a'}">${fv(d.novoD)}</strong>`
             : `<span style="color:var(--text2)">${fv(d.novoD)}</span>`;
-          linhas += `<tr>
-            <td style="padding:5px 8px 5px 0;font-size:13px;color:var(--text)">${d.ativo}</td>
+          linhas += `<tr style="${rowBg}">
+            <td style="padding:5px 8px 5px 0;font-size:13px;color:var(--text)">${warn}${d.ativo}</td>
             <td style="padding:5px 8px;font-size:13px;text-align:right">${celulaI}</td>
             <td style="padding:5px 0 5px 8px;font-size:13px;text-align:right">${celulaD}</td>
           </tr>`;
@@ -1893,6 +1917,7 @@ function mostrarRelatorioSync(relatorio, erroMsg) {
             <span style="font-size:15px;font-weight:700;color:var(--text)">${dtLabel(r.date)}</span>
             ${tag}
           </div>
+          ${alertaAnomalia}
           <table style="width:100%;border-collapse:collapse">
             <thead><tr>
               <th style="font-size:11px;color:var(--text2);text-align:left;padding-bottom:4px">Ativo</th>
@@ -2024,6 +2049,7 @@ function initDashboard() {
   }
 
   initSavingsRate();
+  initResumoMensal();
 
   const casaI = s['Dinheiro possivel casa individual']?.ines||0;
   const casaD = s['Dinheiro possivel casa individual']?.dany||0;
@@ -2055,6 +2081,76 @@ function initDashboard() {
     },
     options:{ ...baseOpts, plugins:{ ...baseOpts.plugins, tooltip:{ mode:'index', callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.raw) }}}}
   });
+}
+
+// ── Resumo Mensal ─────────────────────────────────────────────
+function initResumoMensal() {
+  const card = document.getElementById('resumo-mensal-card');
+  if (!card || allData.length < 2) { if (card) card.style.display='none'; return; }
+  const last = allData[allData.length - 1];
+  const prev = allData[allData.length - 2];
+
+  const deltaTotal = (last.summary?.['Total juntos']?.ines || 0) - (prev.summary?.['Total juntos']?.ines || 0);
+  const deltaInes  = (last.summary?.['Total Individual']?.ines || 0) - (prev.summary?.['Total Individual']?.ines || 0);
+  const deltaDany  = (last.summary?.['Total Individual']?.dany || 0) - (prev.summary?.['Total Individual']?.dany || 0);
+
+  // Calcular variação por ativo (soma ines+dany)
+  const todosAtivos = new Set([...Object.keys(last.assets || {}), ...Object.keys(prev.assets || {})]);
+  const variacoes = [];
+  todosAtivos.forEach(k => {
+    const novI = last.assets?.[k]?.ines ?? 0;
+    const novD = last.assets?.[k]?.dany ?? 0;
+    const antI = prev.assets?.[k]?.ines ?? 0;
+    const antD = prev.assets?.[k]?.dany ?? 0;
+    const delta = (novI + novD) - (antI + antD);
+    if (Math.abs(delta) > 1) variacoes.push({ ativo: k, delta });
+  });
+  variacoes.sort((a, b) => b.delta - a.delta);
+  const top3 = variacoes.slice(0, 3).filter(v => v.delta > 0);
+  const bot3 = variacoes.slice(-3).reverse().filter(v => v.delta < 0);
+
+  const sinal = v => v >= 0 ? '+' : '';
+  const cor   = v => v >= 0 ? 'var(--green)' : 'var(--red)';
+  const badge = (label, v) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+       <span style="font-size:12px;color:var(--text2)">${label}</span>
+       <span style="font-size:13px;font-weight:600;color:${cor(v)}">${sinal(v)}${_fmt(v)}</span>
+     </div>`;
+
+  const moverRows = (arr) => arr.map(v =>
+    `<div style="display:flex;justify-content:space-between;padding:4px 0">
+       <span style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">${v.ativo}</span>
+       <span style="font-size:12px;font-weight:600;color:${cor(v.delta)}">${sinal(v.delta)}${_fmt(v.delta)}</span>
+     </div>`).join('');
+
+  card.style.display = '';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:600">📊 Resumo — ${dtLabel(last.date)}</div>
+      <span style="font-size:12px;color:var(--text2)">vs ${dtLabel(prev.date)}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:10px 6px">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Total</div>
+        <div style="font-size:17px;font-weight:700;color:${cor(deltaTotal)}">${sinal(deltaTotal)}${_fmt(deltaTotal)}</div>
+      </div>
+      <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:10px 6px">
+        <div style="font-size:10px;color:var(--ines);text-transform:uppercase;margin-bottom:4px">Inês</div>
+        <div style="font-size:17px;font-weight:700;color:${cor(deltaInes)}">${sinal(deltaInes)}${_fmt(deltaInes)}</div>
+      </div>
+      <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:10px 6px">
+        <div style="font-size:10px;color:var(--dany);text-transform:uppercase;margin-bottom:4px">Dany</div>
+        <div style="font-size:17px;font-weight:700;color:${cor(deltaDany)}">${sinal(deltaDany)}${_fmt(deltaDany)}</div>
+      </div>
+    </div>
+    ${top3.length ? `<div style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Maiores subidas</div>
+      ${moverRows(top3)}
+    </div>` : ''}
+    ${bot3.length ? `<div>
+      <div style="font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px">Maiores descidas</div>
+      ${moverRows(bot3)}
+    </div>` : ''}`;
 }
 
 // ── Evolução ──────────────────────────────────────────────────
