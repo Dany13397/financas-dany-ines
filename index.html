@@ -1730,7 +1730,10 @@ async function syncFromExcel() {
       if (data) mesesCols.push({ date: data, ci: i, cd: i + 1 });
     }
 
-    if (!mesesCols.length) throw new Error('Não foi possível ler as datas do Excel');
+    if (!mesesCols.length) {
+      const preview = rows.slice(0, 6).map((r, i) => `R${i}: [${(r||[]).slice(0,5).join(' | ')}]`).join('\n');
+      throw new Error(`Não foi possível ler as datas do Excel\n\nPrimeiras linhas do CSV:\n${preview}`);
+    }
 
     // Datas já existentes
     const datasExistentes = new Set(allData.map(d => d.date));
