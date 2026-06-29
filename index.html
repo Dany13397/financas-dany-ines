@@ -1670,7 +1670,25 @@ async function syncFromExcel() {
 
   function parseValor(s, permitirNegativo = false) {
     if (!s || !s.trim()) return null;
-    const n = parseFloat(s.replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',','.'));
+    let t = s.trim().replace(/[^\d,.-]/g, '');
+    if (!t) return null;
+    const temPonto  = t.includes('.');
+    const temVirgula = t.includes(',');
+    if (temPonto && temVirgula) {
+      // Ambos presentes: o último é o separador decimal
+      if (t.lastIndexOf(',') > t.lastIndexOf('.')) {
+        // Formato europeu: 1.234,56 → remover pontos, trocar vírgula
+        t = t.replace(/\./g, '').replace(',', '.');
+      } else {
+        // Formato US: 1,234.56 → remover vírgulas
+        t = t.replace(/,/g, '');
+      }
+    } else if (temVirgula) {
+      // Só vírgula → separador decimal (europeu)
+      t = t.replace(',', '.');
+    }
+    // Só ponto ou nenhum → ponto é decimal (formato US do Google Sheets)
+    const n = parseFloat(t);
     if (isNaN(n)) return null;
     if (!permitirNegativo && n < 0) return null;
     return n;
