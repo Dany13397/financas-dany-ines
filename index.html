@@ -2390,6 +2390,14 @@ async function togglePresenca(cat, i) {
   renderWeddingTab();
 }
 
+async function toggleTipo(cat, i) {
+  const tipos = ['adulto', 'crianca', 'bebe'];
+  const atual = weddingConfig.guests[cat][i].tipo || 'adulto';
+  weddingConfig.guests[cat][i].tipo = tipos[(tipos.indexOf(atual) + 1) % tipos.length];
+  await saveWeddingConfig();
+  renderWeddingTab();
+}
+
 // ── Mesas ─────────────────────────────────────────────────────
 const TABLE_MIN = 8, TABLE_MAX = 12;
 
@@ -2653,7 +2661,7 @@ function renderGuestTab() {
               onblur="this.style.borderBottomColor='transparent';renameGuest('${c.key}',${i},this.value)"
               title="Clica para editar o nome"
               style="font-size:16px;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);outline:none;width:100%;padding:1px 2px;border-radius:4px;transition:border-color .15s">
-            ${tipoBadge(p.tipo)}
+            <span onclick="toggleTipo('${c.key}',${i})" style="cursor:pointer" title="Clica para mudar tipo">${tipoBadge(p.tipo)}</span>
             <span onclick="togglePresenca('${c.key}',${i})" style="cursor:pointer" title="Clica para mudar">${presencaBadge(p.presenca||'pendente')}</span>
             <button onclick="moveGuest('${c.key}',${i},-1)" ${i===0?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===0?'.3':'1'}">▲</button>
             <button onclick="moveGuest('${c.key}',${i},1)"  ${i===list.length-1?'disabled':''} style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;opacity:${i===list.length-1?'.3':'1'}">▼</button>
