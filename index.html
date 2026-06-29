@@ -1814,15 +1814,22 @@ async function syncFromExcel() {
   } catch (e) {
     console.error('[syncFromExcel]', e);
     label.textContent = '❌ Erro no sync';
-    setTimeout(() => { label.textContent = 'Sync Excel'; btn.disabled = false; }, 3000);
+    setTimeout(() => { label.textContent = 'Sync Excel'; btn.disabled = false; }, 5000);
+    const msg = e?.message || String(e) || 'Erro desconhecido';
+    mostrarRelatorioSync([], msg);
   }
 }
 
-function mostrarRelatorioSync(relatorio) {
+function mostrarRelatorioSync(relatorio, erroMsg) {
   const fv = v => v != null ? _fmt(v) : '—';
 
   let corpo = '';
-  if (!relatorio.length) {
+  if (erroMsg) {
+    corpo = `<div style="background:#ff4d4d22;border:1px solid #ff4d4d44;border-radius:10px;padding:14px 16px;margin-bottom:12px">
+      <p style="color:#ff7070;font-size:13px;font-weight:600;margin:0 0 6px">❌ Erro no sync</p>
+      <p style="color:#ff9090;font-size:12px;font-family:monospace;margin:0;word-break:break-all">${erroMsg}</p>
+    </div>`;
+  } else if (!relatorio.length) {
     corpo = '<p style="color:var(--text2);font-size:14px;text-align:center;padding:16px 0">Nenhuma alteração encontrada — tudo já estava atualizado.</p>';
   } else {
     for (const r of relatorio) {
