@@ -1707,7 +1707,9 @@ async function syncFromExcel() {
 
   try {
     const res  = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — verifica permissões da folha Google`);
     const text = await res.text();
+    if (!text || !text.trim()) throw new Error('Resposta vazia do Google Sheets — a folha pode não estar partilhada publicamente');
 
     // Parsear CSV
     const rows = text.split('\n').map(line => {
@@ -1731,8 +1733,8 @@ async function syncFromExcel() {
     }
 
     if (!mesesCols.length) {
-      const preview = rows.slice(0, 6).map((r, i) => `R${i}: [${(r||[]).slice(0,5).join(' | ')}]`).join('\n');
-      throw new Error(`Não foi possível ler as datas do Excel\n\nPrimeiras linhas do CSV:\n${preview}`);
+      const rawPreview = text.slice(0, 400).replace(/</g, '&lt;');
+      throw new Error(`Não foi possível ler as datas do Excel\n\nConteúdo bruto (primeiros 400 chars):\n${rawPreview}`);
     }
 
     // Datas já existentes
