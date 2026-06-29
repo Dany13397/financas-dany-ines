@@ -2126,7 +2126,10 @@ function initResumoMensal() {
   card.style.display = '';
   card.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:14px;font-weight:600">📊 Resumo — ${dtLabel(last.date)}</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:14px;font-weight:600">📊 Resumo — ${dtLabel(last.date)}</span>
+        <button class="info-btn" onclick="showInfo('Resumo do Mês','Compara o mês mais recente com o anterior. Mostra a variação do patrimônio total e individual (Inês e Dany), e quais os ativos com maiores subidas e descidas no período.')" style="touch-action:manipulation">ⓘ</button>
+      </div>
       <span style="font-size:12px;color:var(--text2)">vs ${dtLabel(prev.date)}</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
