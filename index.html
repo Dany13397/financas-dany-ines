@@ -464,6 +464,9 @@
         </div>
       </div>
 
+      <!-- Alertas tarefas casamento -->
+      <div id="wedding-alerts-card" class="chart-card" style="display:none;padding:16px"></div>
+
       <div class="chart-card">
         <div class="chart-title">Patrimônio Total <small>últimos 12 meses</small></div>
         <div class="chart-wrap"><canvas id="chart-dash-total"></canvas></div>
@@ -578,6 +581,7 @@
       <div class="chart-card">
         <div class="chart-title">Comparar Anos <small>patrimônio para casa mês a mês</small></div>
         <div class="chart-wrap"><canvas id="chart-year-compare"></canvas></div>
+        <div id="yoy-table" style="margin-top:16px"></div>
       </div>
       <div class="chart-card">
         <div class="chart-title">Composição do Patrimônio <small>ativos empilhados</small></div>
@@ -2050,6 +2054,7 @@ function initDashboard() {
 
   initSavingsRate();
   initResumoMensal();
+  renderWeddingAlerts();
 
   const casaI = s['Dinheiro possivel casa individual']?.ines||0;
   const casaD = s['Dinheiro possivel casa individual']?.dany||0;
@@ -3703,6 +3708,40 @@ function renderTasksTab() {
   }).join('');
 }
 
+// ── Alertas Tarefas Casamento ─────────────────────────────────
+function renderWeddingAlerts() {
+  const card = document.getElementById('wedding-alerts-card');
+  if (!card) return;
+  const tasks = weddingConfig?.tasks || [];
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+  const upcoming = tasks
+    .filter(t => !t.done && t.data)
+    .map(t => { const d = new Date(t.data+'T12:00'); return {...t, dias: Math.round((d-hoje)/86400000)}; })
+    .filter(t => t.dias <= 90)
+    .sort((a,b) => a.dias - b.dias);
+
+  if (!upcoming.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  card.innerHTML = `
+    <div style="font-size:14px;font-weight:600;margin-bottom:12px">💒 Tarefas do Casamento</div>
+    ${upcoming.map(t => {
+      const cor = t.dias < 0 ? 'var(--red)' : t.dias <= 30 ? 'var(--red)' : t.dias <= 60 ? 'var(--yellow)' : 'var(--text2)';
+      const label = t.dias < 0 ? `⚠️ Atrasada ${Math.abs(t.dias)}d` : t.dias === 0 ? '🔴 Hoje!' : `${t.dias} dias`;
+      const dataStr = new Date(t.data+'T12:00').toLocaleDateString('pt-PT',{day:'numeric',month:'short'});
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;flex:1;padding-right:12px">${t.nome}</div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:12px;font-weight:600;color:${cor}">${label}</div>
+          <div style="font-size:11px;color:var(--text2)">${dataStr}</div>
+        </div>
+      </div>`;
+    }).join('')}
+    <div style="text-align:right;margin-top:10px">
+      <button onclick="switchTab('casamento',document.querySelectorAll('.nav-btn')[5]);setTimeout(()=>switchWeddingTab('tarefas'),80)" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:4px 0">Ver todas as tarefas →</button>
+    </div>`;
+}
+
 // ── Comparar Anos ─────────────────────────────────────────────
 function initYearCompare() {
   if (!allData.length) return;
@@ -3725,6 +3764,46 @@ function initYearCompare() {
     data: { labels: monthNames, datasets },
     options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { mode: 'index', callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.raw)}` } } } }
   });
+
+  // Tabela: mês atual vs mesmo mês do ano anterior
+  const tbl = document.getElementById('yoy-table');
+  if (!tbl) return;
+  const last = allData[allData.length-1];
+  const [lastY, lastM] = last.date.replace('b','').split('-');
+  const prevY = String(parseInt(lastY)-1);
+  const prevEntry = allData.find(d => d.date.replace('b','') === `${prevY}-${lastM}`);
+  if (!prevEntry) { tbl.innerHTML = ''; return; }
+
+  const curLbl  = dtLabel(lastY+'-'+lastM);
+  const prevLbl = dtLabel(prevY+'-'+lastM);
+  const metrics = [
+    { label:'Patrimônio Total', key:'Total juntos',                            p:'ines' },
+    { label:'Para Casa',        key:'Dinheiro total possivel casa',            p:'ines' },
+    { label:'Inês',             key:'Total Individual',                        p:'ines' },
+    { label:'Dany',             key:'Total Individual',                        p:'dany' },
+  ];
+
+  tbl.innerHTML = `
+    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">${prevLbl} → ${curLbl}</div>
+    <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:0 12px;align-items:center">
+      <div style="font-size:11px;color:var(--text2);padding-bottom:6px"></div>
+      <div style="font-size:11px;color:var(--text2);text-align:right;padding-bottom:6px">${prevLbl}</div>
+      <div style="font-size:11px;color:var(--text2);text-align:right;padding-bottom:6px">${curLbl}</div>
+      <div style="font-size:11px;color:var(--text2);text-align:right;padding-bottom:6px">Δ</div>
+      ${metrics.map(m => {
+        const cur  = last.summary?.[m.key]?.[m.p] || 0;
+        const pre  = prevEntry.summary?.[m.key]?.[m.p] || 0;
+        const delta = cur - pre;
+        const pct  = pre ? ((delta/pre)*100).toFixed(1) : null;
+        const cor  = delta >= 0 ? 'var(--green)' : 'var(--red)';
+        const sinal = delta >= 0 ? '+' : '';
+        return `
+          <div style="font-size:13px;padding:8px 0;border-top:1px solid var(--border)">${m.label}</div>
+          <div style="font-size:12px;text-align:right;padding:8px 0;border-top:1px solid var(--border);color:var(--text2)">${_fmt(pre)}</div>
+          <div style="font-size:12px;text-align:right;padding:8px 0;border-top:1px solid var(--border)">${_fmt(cur)}</div>
+          <div style="font-size:12px;text-align:right;padding:8px 0;border-top:1px solid var(--border);color:${cor};font-weight:600">${pct!=null?sinal+pct+'%':'—'}</div>`;
+      }).join('')}
+    </div>`;
 }
 
 // ── Performance dos Investimentos ─────────────────────────────
