@@ -849,6 +849,7 @@
             <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn" onclick="addTask()">➕ Adicionar</button></div>
           </div>
         </div>
+        <div id="tk-upcoming"></div>
         <div id="tk-list"></div>
       </div>
 
@@ -1514,6 +1515,7 @@ async function loadApp(session) {
     if (activeTab === 'dany')     initPerson('dany');
     if (activeTab === 'casa')     renderCasaTab();
     if (activeTab === 'casamento') renderWeddingTab();
+    checkTaskNotifications();
   }).catch(() => {});
 }
 
@@ -3802,6 +3804,8 @@ function renderTasksTab() {
   });
 
   const hoje = new Date().toISOString().slice(0,10);
+  renderWeddingAlerts();
+
   const list  = document.getElementById('tk-list');
   list.innerHTML = sorted.map(t => {
     const atrasada  = !t.done && t.data && t.data < hoje;
@@ -3821,7 +3825,7 @@ function renderTasksTab() {
 
 // ── Alertas Tarefas Casamento ─────────────────────────────────
 function renderWeddingAlerts() {
-  const card = document.getElementById('wedding-alerts-card');
+  const card = document.getElementById('tk-upcoming');
   if (!card) return;
   const tasks = weddingConfig?.tasks || [];
   const hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -3835,7 +3839,8 @@ function renderWeddingAlerts() {
   if (!upcoming.length) { card.style.display = 'none'; return; }
   card.style.display = '';
   card.innerHTML = `
-    <div style="font-size:14px;font-weight:600;margin-bottom:12px">💒 Tarefas do Casamento</div>
+    <div style="padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:16px">
+    <div style="font-size:14px;font-weight:600;margin-bottom:12px">💒 Tarefas com prazo a chegar</div>
     ${upcoming.map(t => {
       const cor = t.dias < 0 ? 'var(--red)' : t.dias <= 30 ? 'var(--red)' : t.dias <= 60 ? 'var(--yellow)' : 'var(--text2)';
       const label = t.dias < 0 ? `⚠️ Atrasada ${Math.abs(t.dias)}d` : t.dias === 0 ? '🔴 Hoje!' : `${t.dias} dias`;
@@ -3848,9 +3853,45 @@ function renderWeddingAlerts() {
         </div>
       </div>`;
     }).join('')}
-    <div style="text-align:right;margin-top:10px">
-      <button onclick="switchTab('casamento',document.querySelectorAll('.nav-btn')[5]);setTimeout(()=>switchWeddingTab('tarefas'),80)" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:4px 0">Ver todas as tarefas →</button>
     </div>`;
+}
+
+// ── Notificações locais (Option B) ────────────────────────────
+async function checkTaskNotifications() {
+  const tasks = weddingConfig?.tasks || [];
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+  const alertDays = [30, 15, 7];
+  const toNotify = tasks
+    .filter(t => !t.done && t.data)
+    .map(t => { const d = new Date(t.data+'T12:00'); return {...t, dias: Math.round((d-hoje)/86400000)}; })
+    .filter(t => alertDays.includes(t.dias));
+
+  if (!toNotify.length) return;
+
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'denied') return;
+
+  if (Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return;
+  }
+
+  // Avoid showing same notifications twice in the same session
+  const key = 'notif_shown_' + hoje.toISOString().slice(0,10);
+  const shown = JSON.parse(sessionStorage.getItem(key) || '[]');
+
+  toNotify.forEach(t => {
+    const id = t.nome + '_' + t.dias;
+    if (shown.includes(id)) return;
+    new Notification('💒 Tarefa do Casamento', {
+      body: `"${t.nome}" — faltam ${t.dias} dias`,
+      icon: '/favicon.ico'
+    });
+    shown.push(id);
+  });
+
+  sessionStorage.setItem(key, JSON.stringify(shown));
 }
 
 // ── Comparar Anos ─────────────────────────────────────────────
