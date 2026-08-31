@@ -462,6 +462,10 @@
           <div>Previsão: <span id="progress-previsao" style="font-weight:600">—</span></div>
           <div>Objetivo: <span id="progress-goal">—</span></div>
         </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:var(--text2)">Excedente atual</span>
+          <span id="progress-excedente" style="font-size:15px;font-weight:700">—</span>
+        </div>
       </div>
 
       <div class="chart-card">
@@ -1185,7 +1189,7 @@ function initInfoButtons() {
       'Patrimônio total do Dany — soma de todos os seus ativos individuais e a sua parte nos ativos conjuntos.'],
     // ── Dashboard — progress card ──────────────────────────────
     ['progress-pct', 'Progresso para Casa',
-      'Percentagem do objetivo total já atingida. O objetivo = escritura (preço − crédito − já pago) + casamento líquido (custos − prendas) + extras de casa. A barra enche à medida que o dinheiro para casa cresce.'],
+      'Percentagem do objetivo total já atingida. O objetivo = escritura (preço − crédito − já pago) + casamento líquido (custos − prendas) + extras de casa. A barra enche à medida que o dinheiro para casa cresce.<br><br><strong>Excedente atual</strong> = dinheiro disponível para casa − objetivo total. Se positivo (verde), já têm mais do que precisam. Se negativo (vermelho), ainda falta esse valor para atingir o objetivo.'],
     // ── Dashboard — person cards ───────────────────────────────
     ['person-ines-total', 'Resumo — Inês',
       'Visão geral do patrimônio da Inês: total, quanto está destinado à casa, e a divisão entre dinheiro líquido (mobilizável) e investimentos de longo prazo.'],
@@ -2091,6 +2095,12 @@ function initDashboard() {
   document.getElementById('progress-desc').textContent    = falta > 0
     ? `Faltam ${fmt(falta)} · escritura ${fmt(naEscritura)} + casamento ${fmt(weddingNet)}${extrasCasa>0?' + extras '+fmt(extrasCasa):''}`
     : '🎉 Objetivo atingido!';
+  const excEl = document.getElementById('progress-excedente');
+  if (excEl) {
+    const excedente = casa - totalObjetivo;
+    excEl.textContent = (excedente >= 0 ? '+' : '') + fmt(excedente);
+    excEl.style.color = excedente >= 0 ? 'var(--green)' : 'var(--red)';
+  }
   if (!_lastSyncAt) document.getElementById('last-update').textContent = 'Último registo: '+dtLabel(last.date);
   initInfoButtons();
 
