@@ -4335,27 +4335,6 @@ async function undoDelete() {
 }
 
 // ── Swipe entre tabs ─────────────────────────────────────────
-const _swipeTabs = ['dashboard','evolucao','ativos','ines','dany','casamento','casa','adicionar'];
-let _swX = 0, _swY = 0, _swOk = false;
-
-document.addEventListener('touchstart', e => {
-  _swOk = !e.target.closest('.nav,.modal-bg,#screen-auth,#screen-loading,#undo-toast');
-  _swX = e.touches[0].clientX;
-  _swY = e.touches[0].clientY;
-}, { passive: true });
-
-document.addEventListener('touchend', e => {
-  if (!_swOk) return;
-  const dx = e.changedTouches[0].clientX - _swX;
-  const dy = e.changedTouches[0].clientY - _swY;
-  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
-  const cur  = _swipeTabs.indexOf(activeTab);
-  const next = dx < 0 ? Math.min(cur + 1, _swipeTabs.length - 1) : Math.max(cur - 1, 0);
-  if (next === cur) return;
-  const btns = document.querySelectorAll('.nav-btn');
-  switchTab(_swipeTabs[next], btns[next]);
-  btns[next]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-}, { passive: true });
 
 // ── Device detection ─────────────────────────────────────────
 function detectDevice() {
