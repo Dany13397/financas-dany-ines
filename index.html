@@ -224,21 +224,30 @@
   .header-left { min-width: 0; flex: 1; overflow: hidden; }
   .header-left h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  /* Nav: icons-only no mobile + dot no tab activo */
+  /* Mobile: esconde nav original, mostra mobile-bar */
   @media (max-width: 600px) {
-    .nav-btn { min-width: 44px; padding: 9px 4px 5px; gap: 0; }
-    .tab-label { display: none; }
-    .tab-icon { font-size: 22px; line-height: 1.1; }
-    .nav-btn.active::after {
-      content: '';
-      display: block;
-      width: 4px; height: 4px;
-      border-radius: 50%;
-      background: var(--accent);
-      margin: 4px auto 0;
-    }
-    .nav-btn.active .tab-icon { filter: drop-shadow(0 0 5px rgba(155,143,212,.5)); }
+    .nav { display: none !important; }
+    .mobile-bar { display: flex !important; }
+    .mobile-sheet-bg.open { display: flex !important; }
+    #undo-toast { bottom: calc(70px + env(safe-area-inset-bottom) + 10px); }
   }
+
+  /* mobile-bar — barra fina em baixo (mobile only) */
+  .mobile-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(17,18,19,0.92); backdrop-filter: saturate(180%) blur(28px); -webkit-backdrop-filter: saturate(180%) blur(28px); border-top: 0.5px solid rgba(255,255,255,0.05); padding: 12px 20px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); align-items: center; justify-content: space-between; }
+  .mobile-bar-active { display: flex; align-items: center; gap: 10px; }
+  .mobile-bar-icon { font-size: 22px; }
+  .mobile-bar-label { font-size: 15px; font-weight: 600; color: var(--text); }
+  .mobile-bar-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--text2); cursor: pointer; touch-action: manipulation; -webkit-appearance: none; }
+  .mobile-bar-btn:active { opacity: .65; }
+
+  /* bottom sheet */
+  .mobile-sheet-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 200; align-items: flex-end; }
+  .mobile-sheet { background: var(--surface); border-radius: 20px 20px 0 0; padding: 0 20px calc(20px + env(safe-area-inset-bottom)); width: 100%; animation: slideUp .32s cubic-bezier(.32,1,.42,.97); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .mobile-sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 4px 0 8px; }
+  .mobile-sheet-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px; border-radius: 12px; background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 11px; font-weight: 500; cursor: pointer; touch-action: manipulation; -webkit-appearance: none; transition: background .15s, border-color .15s; }
+  .mobile-sheet-btn .sheet-icon { font-size: 26px; line-height: 1; }
+  .mobile-sheet-btn.active { background: rgba(155,143,212,.15); border-color: rgba(155,143,212,.3); color: var(--accent); }
+  .mobile-sheet-btn:active { opacity: .7; }
 
   /* Header: botões menores em ecrãs estreitos */
   @media (max-width: 390px) {
@@ -460,6 +469,33 @@
     <button class="nav-btn" onclick="switchTab('casa',this)"><span class="tab-icon">🏠</span><span class="tab-label">Casa</span></button>
     <button class="nav-btn" onclick="switchTab('adicionar',this)"><span class="tab-icon">➕</span><span class="tab-label">Registar</span></button>
   </nav>
+
+  <!-- Mobile bar (mobile only) -->
+  <div class="mobile-bar" id="mobile-bar">
+    <div class="mobile-bar-active">
+      <span class="mobile-bar-icon" id="mobile-bar-icon">📊</span>
+      <span class="mobile-bar-label" id="mobile-bar-label">Início</span>
+    </div>
+    <button class="mobile-bar-btn" onclick="openMobileMenu()" aria-label="Menu">☰</button>
+  </div>
+
+  <!-- Mobile menu bottom sheet -->
+  <div class="mobile-sheet-bg" id="mobile-sheet-bg" onclick="closeMobileMenu()">
+    <div class="mobile-sheet" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text2);text-align:left">Navegar</h3>
+      <div class="mobile-sheet-grid">
+        <button class="mobile-sheet-btn active" id="msb-dashboard" onclick="switchTab('dashboard',document.querySelectorAll('.nav-btn')[0]);closeMobileMenu()"><span class="sheet-icon">📊</span>Início</button>
+        <button class="mobile-sheet-btn" id="msb-evolucao" onclick="switchTab('evolucao',document.querySelectorAll('.nav-btn')[1]);closeMobileMenu()"><span class="sheet-icon">📈</span>Evolução</button>
+        <button class="mobile-sheet-btn" id="msb-ativos" onclick="switchTab('ativos',document.querySelectorAll('.nav-btn')[2]);closeMobileMenu()"><span class="sheet-icon">💰</span>Ativos</button>
+        <button class="mobile-sheet-btn" id="msb-ines" onclick="switchTab('ines',document.querySelectorAll('.nav-btn')[3]);closeMobileMenu()"><span class="sheet-icon" style="color:var(--ines)">👤</span>Inês</button>
+        <button class="mobile-sheet-btn" id="msb-dany" onclick="switchTab('dany',document.querySelectorAll('.nav-btn')[4]);closeMobileMenu()"><span class="sheet-icon" style="color:var(--dany)">👤</span>Dany</button>
+        <button class="mobile-sheet-btn" id="msb-casamento" onclick="switchTab('casamento',document.querySelectorAll('.nav-btn')[5]);closeMobileMenu()"><span class="sheet-icon">💒</span>Casamento</button>
+        <button class="mobile-sheet-btn" id="msb-casa" onclick="switchTab('casa',document.querySelectorAll('.nav-btn')[6]);closeMobileMenu()"><span class="sheet-icon">🏠</span>Casa</button>
+        <button class="mobile-sheet-btn" id="msb-adicionar" onclick="switchTab('adicionar',document.querySelectorAll('.nav-btn')[7]);closeMobileMenu()"><span class="sheet-icon">➕</span>Registar</button>
+      </div>
+    </div>
+  </div>
 
   <div class="content">
 
@@ -3450,6 +3486,19 @@ function togglePrivacy() {
 // ── Navigation ────────────────────────────────────────────────
 const _tabTitles = {dashboard:'Início',evolucao:'Evolução',ativos:'Ativos',ines:'Inês',dany:'Dany',casamento:'Casamento',casa:'Casa',adicionar:'Registar'};
 
+function openMobileMenu() {
+  const bg = document.getElementById('mobile-sheet-bg');
+  bg.classList.add('open');
+  bg.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileMenu() {
+  const bg = document.getElementById('mobile-sheet-bg');
+  bg.classList.remove('open');
+  bg.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 function switchTab(tab, btn) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -3467,6 +3516,15 @@ function switchTab(tab, btn) {
     if (tab==='casa')      { renderCasaTab(); calcSimulador(); calcCenario(); }
     _markClean(tab);
   }
+  // Actualiza mobile bar
+  const _mobileIcons = {dashboard:'📊',evolucao:'📈',ativos:'💰',ines:'👤',dany:'👤',casamento:'💒',casa:'🏠',adicionar:'➕'};
+  const mIcon  = document.getElementById('mobile-bar-icon');
+  const mLabel = document.getElementById('mobile-bar-label');
+  if (mIcon)  mIcon.textContent  = _mobileIcons[tab] || '📊';
+  if (mLabel) mLabel.textContent = _tabTitles[tab] || tab;
+  document.querySelectorAll('.mobile-sheet-btn').forEach(b => b.classList.remove('active'));
+  const activeSheetBtn = document.getElementById('msb-' + tab);
+  if (activeSheetBtn) activeSheetBtn.classList.add('active');
 }
 
 // ── Goal ──────────────────────────────────────────────────────
