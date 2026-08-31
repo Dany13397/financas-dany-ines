@@ -218,6 +218,58 @@
   .undo-bar{position:absolute;bottom:0;left:0;height:3px;background:var(--accent);border-radius:0;width:100%;transform-origin:left;animation:undo-shrink 4s linear forwards;}
   @keyframes undo-shrink{to{transform:scaleX(0)}}
 
+  /* ── Mobile optimizations ────────────────────────────────── */
+
+  /* Header: previne compressão do título */
+  .header-left { min-width: 0; flex: 1; overflow: hidden; }
+  .header-left h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Nav: icons-only no mobile + dot no tab activo */
+  @media (max-width: 600px) {
+    .nav-btn { min-width: 44px; padding: 9px 4px 5px; gap: 0; }
+    .tab-label { display: none; }
+    .tab-icon { font-size: 22px; line-height: 1.1; }
+    .nav-btn.active::after {
+      content: '';
+      display: block;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin: 4px auto 0;
+    }
+    .nav-btn.active .tab-icon { filter: drop-shadow(0 0 5px rgba(155,143,212,.5)); }
+  }
+
+  /* Header: botões menores em ecrãs estreitos */
+  @media (max-width: 390px) {
+    .header { gap: 6px; padding-left: 12px; padding-right: 12px; }
+    .goal-badge { padding: 4px 8px; font-size: 11px; min-height: 32px; }
+    .user-badge { width: 36px; height: 36px; font-size: 14px; }
+  }
+
+  /* Cards: evita overflow de valores longos */
+  .card-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Tipografia em mobile: reduz fontes que ficam justas em 2 colunas */
+  @media (max-width: 600px) {
+    .card-value     { font-size: 18px; }
+    .person-total   { font-size: 20px; }
+    .progress-pct   { font-size: 20px; }
+    .chart-wrap canvas { max-height: 210px; }
+    .cards-grid     { gap: 10px; margin-bottom: 16px; }
+    .chart-card, .progress-card { padding: 16px; }
+    .card           { padding: 14px; }
+    .person-card    { padding: 14px; }
+    .form-section   { padding: 16px; }
+  }
+
+  /* Ecrãs muito pequenos (<340px): stack em coluna única */
+  @media (max-width: 340px) {
+    .cards-grid { grid-template-columns: 1fr; }
+    .form-grid  { grid-template-columns: 1fr; }
+    .person-row { grid-template-columns: 1fr; }
+  }
+
   /* ── Desktop Layout ────────────────────────────────────────── */
   :root { --header-h: 57px; }
 
