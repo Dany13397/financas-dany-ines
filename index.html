@@ -1791,17 +1791,20 @@ async function saveEntry() {
   };
 
   // Calculate summaries
-  const INES_KEYS = ['Conta à Ordem','Conta Poupança','Conta Conjunta','Certificados de Aforro','Trade Republic (Carteira)','Trade Republic (Saldo)','PPR','Ações Accenture','CGD Pensões'];
+  // Nota: 'Conta Conjunta' não é atribuída a nenhum dos dois individualmente —
+  // conta apenas para os totais gerais/conjuntos.
+  const INES_KEYS = ['Conta à Ordem','Conta Poupança','Certificados de Aforro','Trade Republic (Carteira)','Trade Republic (Saldo)','PPR','Ações Accenture','CGD Pensões'];
   const DANY_KEYS = ['Conta à Ordem','Conta Poupança','Certificados de Aforro','Trade Republic (Carteira)','Trade Republic (Saldo)','PPR','Ações Accenture','DEGIRO','XTB','Trust Wallet'];
   const inesTotal = INES_KEYS.reduce((s,k) => s+(assets[k]?.ines||0), 0);
   const danyTotal = DANY_KEYS.reduce((s,k) => s+(assets[k]?.dany||0), 0);
-  const casaInes = (assets['Conta à Ordem']?.ines||0)+(assets['Conta Poupança']?.ines||0)+(assets['Conta Conjunta']?.ines||0)+(assets['Certificados de Aforro']?.ines||0);
+  const conjuntaTotal = (assets['Conta Conjunta']?.ines||0)+(assets['Conta Conjunta']?.dany||0);
+  const casaInes = (assets['Conta à Ordem']?.ines||0)+(assets['Conta Poupança']?.ines||0)+(assets['Certificados de Aforro']?.ines||0);
   const casaDany = (assets['Conta à Ordem']?.dany||0)+(assets['Conta Poupança']?.dany||0)+(assets['Certificados de Aforro']?.dany||0);
 
   const summary = {
-    'Total juntos':                    { ines: inesTotal+danyTotal, dany: null },
+    'Total juntos':                    { ines: inesTotal+danyTotal+conjuntaTotal, dany: null },
     'Total Individual':                { ines: inesTotal, dany: danyTotal },
-    'Dinheiro total possivel casa':    { ines: casaInes+casaDany, dany: null },
+    'Dinheiro total possivel casa':    { ines: casaInes+casaDany+conjuntaTotal, dany: null },
     'Dinheiro possivel casa individual':{ ines: casaInes, dany: casaDany }
   };
 
@@ -2133,6 +2136,7 @@ const ASSET_COLORS = {
   'Trust Wallet':'#ff9f43','CGD Pensões':'#ff7eb3'
 };
 const ASSET_KEYS = Object.keys(ASSET_COLORS);
+const PERSON_ASSET_KEYS = ASSET_KEYS.filter(k => k !== 'Conta Conjunta');
 
 // ── Dashboard ─────────────────────────────────────────────────
 function initDashboard() {
@@ -2384,20 +2388,30 @@ function initAtivos() {
 
   function mkPie(id, person) {
     const labels=[], vals=[], colors=[];
-    ASSET_KEYS.forEach(k=>{ const v=assets[k]?.[person]; if(v&&v>0){ labels.push(k.replace('Trade Republic','TR').replace('Certificados de Aforro','Cert.Aforro').replace('Ações Accenture','Accenture')); vals.push(v); colors.push(ASSET_COLORS[k]); }});
+    PERSON_ASSET_KEYS.forEach(k=>{ const v=assets[k]?.[person]; if(v&&v>0){ labels.push(k.replace('Trade Republic','TR').replace('Certificados de Aforro','Cert.Aforro').replace('Ações Accenture','Accenture')); vals.push(v); colors.push(ASSET_COLORS[k]); }});
     mkChart(id,{ type:'doughnut', data:{ labels, datasets:[{ data:vals, backgroundColor:colors, borderWidth:2, borderColor:'#1a1d27' }]}, options:{ responsive:true, maintainAspectRatio:true, plugins:{ legend:{ position:'bottom', labels:{ color:'#8b90b0', font:{size:10}, boxWidth:10, padding:8 }}, tooltip:{ callbacks:{ label: c=>' '+c.label+': '+fmt(c.raw) }}}}});
   }
   mkPie('chart-pie-ines','ines');
   mkPie('chart-pie-dany','dany');
 
   const bL=[],bI=[],bD=[];
-  ASSET_KEYS.forEach(k=>{ const vi=assets[k]?.ines||0, vd=assets[k]?.dany||0; if(vi+vd>0){ bL.push(k.replace('Trade Republic','TR').replace('Certificados de Aforro','Cert.Aforro').replace('Ações Accenture','Accenture')); bI.push(vi); bD.push(vd); }});
+  PERSON_ASSET_KEYS.forEach(k=>{ const vi=assets[k]?.ines||0, vd=assets[k]?.dany||0; if(vi+vd>0){ bL.push(k.replace('Trade Republic','TR').replace('Certificados de Aforro','Cert.Aforro').replace('Ações Accenture','Accenture')); bI.push(vi); bD.push(vd); }});
   mkChart('chart-assets-bar',{ type:'bar', data:{ labels:bL, datasets:[{ label:'Inês', data:bI, backgroundColor:'rgba(255,101,132,.8)', borderRadius:4 },{ label:'Dany', data:bD, backgroundColor:'rgba(108,99,255,.8)', borderRadius:4 }]}, options:{...baseOpts, plugins:{...baseOpts.plugins, tooltip:{ mode:'index', callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.raw) }}}}});
 
   const tbody=document.getElementById('asset-table-body'); tbody.innerHTML='';
-  let tI=0,tD=0;
-  ASSET_KEYS.forEach(k=>{ const vi=assets[k]?.ines||0, vd=assets[k]?.dany||0; if(!vi&&!vd) return; tI+=vi; tD+=vd; const tr=document.createElement('tr'); tr.innerHTML=`<td><span class="asset-cat" style="background:${ASSET_COLORS[k]}"></span>${k}</td><td style="text-align:right">${vi?fmt(vi):'—'}</td><td style="text-align:right">${vd?fmt(vd):'—'}</td><td style="text-align:right;font-weight:600">${fmt(vi+vd)}</td>`; tbody.appendChild(tr); });
-  const tr=document.createElement('tr'); tr.style.fontWeight='700'; tr.innerHTML=`<td>Total</td><td style="text-align:right;color:var(--ines)">${fmt(tI)}</td><td style="text-align:right;color:var(--dany)">${fmt(tD)}</td><td style="text-align:right">${fmt(tI+tD)}</td>`; tbody.appendChild(tr);
+  let tI=0,tD=0,tG=0;
+  ASSET_KEYS.forEach(k=>{
+    const isConjunta = k === 'Conta Conjunta';
+    const vi = isConjunta ? 0 : (assets[k]?.ines||0);
+    const vd = isConjunta ? 0 : (assets[k]?.dany||0);
+    const vg = isConjunta ? ((assets[k]?.ines||0)+(assets[k]?.dany||0)) : 0;
+    if(!vi&&!vd&&!vg) return;
+    tI+=vi; tD+=vd; tG+=vg;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="asset-cat" style="background:${ASSET_COLORS[k]}"></span>${k}</td><td style="text-align:right">${vi?fmt(vi):'—'}</td><td style="text-align:right">${vd?fmt(vd):'—'}</td><td style="text-align:right;font-weight:600">${fmt(vi+vd+vg)}</td>`;
+    tbody.appendChild(tr);
+  });
+  const tr=document.createElement('tr'); tr.style.fontWeight='700'; tr.innerHTML=`<td>Total</td><td style="text-align:right;color:var(--ines)">${fmt(tI)}</td><td style="text-align:right;color:var(--dany)">${fmt(tD)}</td><td style="text-align:right">${fmt(tI+tD+tG)}</td>`; tbody.appendChild(tr);
   initPerformance();
 }
 
@@ -2461,7 +2475,7 @@ function initPerson(p) {
   // Donut ativos
   const assets = last.assets || {};
   const pieLabels = [], pieVals = [], pieColors = [];
-  ASSET_KEYS.forEach(k => {
+  PERSON_ASSET_KEYS.forEach(k => {
     const v = assets[k]?.[p];
     if (v && v > 0) { pieLabels.push(k.replace('Trade Republic', 'TR').replace('Certificados de Aforro', 'Cert.Aforro').replace('Ações Accenture', 'Accenture')); pieVals.push(v); pieColors.push(ASSET_COLORS[k]); }
   });
@@ -2475,12 +2489,12 @@ function initPerson(p) {
   const tbody = document.getElementById(`${prefix}-table`);
   tbody.innerHTML = '';
   let tot = 0;
-  ASSET_KEYS.forEach(k => {
+  PERSON_ASSET_KEYS.forEach(k => {
     const v = assets[k]?.[p];
     if (!v || v <= 0) return;
     tot += v;
   });
-  ASSET_KEYS.forEach(k => {
+  PERSON_ASSET_KEYS.forEach(k => {
     const v = assets[k]?.[p];
     if (!v || v <= 0) return;
     const pct = tot > 0 ? ((v / tot) * 100).toFixed(1) : 0;
@@ -2502,7 +2516,7 @@ function initPerson(p) {
       if (perfPrev) perfPrev.textContent = dtLabel(prev.date);
       if (perfLast) perfLast.textContent = dtLabel(last.date);
       const perfRows = [];
-      ASSET_KEYS.forEach(key => {
+      PERSON_ASSET_KEYS.forEach(key => {
         const fVal = prev.assets?.[key]?.[p] || 0;
         const lVal = last.assets?.[key]?.[p] || 0;
         if (!fVal && !lVal) return;
