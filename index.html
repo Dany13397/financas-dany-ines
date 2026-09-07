@@ -1791,20 +1791,19 @@ async function saveEntry() {
   };
 
   // Calculate summaries
-  // Nota: 'Conta Conjunta' não é atribuída a nenhum dos dois individualmente —
-  // conta apenas para os totais gerais/conjuntos.
+  // Nota: 'Conta Conjunta' é meramente informativa — não conta para nenhum
+  // total (nem individual, nem geral/conjunto).
   const INES_KEYS = ['Conta à Ordem','Conta Poupança','Certificados de Aforro','Trade Republic (Carteira)','Trade Republic (Saldo)','PPR','Ações Accenture','CGD Pensões'];
   const DANY_KEYS = ['Conta à Ordem','Conta Poupança','Certificados de Aforro','Trade Republic (Carteira)','Trade Republic (Saldo)','PPR','Ações Accenture','DEGIRO','XTB','Trust Wallet'];
   const inesTotal = INES_KEYS.reduce((s,k) => s+(assets[k]?.ines||0), 0);
   const danyTotal = DANY_KEYS.reduce((s,k) => s+(assets[k]?.dany||0), 0);
-  const conjuntaTotal = (assets['Conta Conjunta']?.ines||0)+(assets['Conta Conjunta']?.dany||0);
   const casaInes = (assets['Conta à Ordem']?.ines||0)+(assets['Conta Poupança']?.ines||0)+(assets['Certificados de Aforro']?.ines||0);
   const casaDany = (assets['Conta à Ordem']?.dany||0)+(assets['Conta Poupança']?.dany||0)+(assets['Certificados de Aforro']?.dany||0);
 
   const summary = {
-    'Total juntos':                    { ines: inesTotal+danyTotal+conjuntaTotal, dany: null },
+    'Total juntos':                    { ines: inesTotal+danyTotal, dany: null },
     'Total Individual':                { ines: inesTotal, dany: danyTotal },
-    'Dinheiro total possivel casa':    { ines: casaInes+casaDany+conjuntaTotal, dany: null },
+    'Dinheiro total possivel casa':    { ines: casaInes+casaDany, dany: null },
     'Dinheiro possivel casa individual':{ ines: casaInes, dany: casaDany }
   };
 
@@ -2399,19 +2398,20 @@ function initAtivos() {
   mkChart('chart-assets-bar',{ type:'bar', data:{ labels:bL, datasets:[{ label:'Inês', data:bI, backgroundColor:'rgba(255,101,132,.8)', borderRadius:4 },{ label:'Dany', data:bD, backgroundColor:'rgba(108,99,255,.8)', borderRadius:4 }]}, options:{...baseOpts, plugins:{...baseOpts.plugins, tooltip:{ mode:'index', callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.raw) }}}}});
 
   const tbody=document.getElementById('asset-table-body'); tbody.innerHTML='';
-  let tI=0,tD=0,tG=0;
+  let tI=0,tD=0;
   ASSET_KEYS.forEach(k=>{
     const isConjunta = k === 'Conta Conjunta';
     const vi = isConjunta ? 0 : (assets[k]?.ines||0);
     const vd = isConjunta ? 0 : (assets[k]?.dany||0);
+    // 'Conta Conjunta' é apenas informativa — não entra em nenhum total.
     const vg = isConjunta ? ((assets[k]?.ines||0)+(assets[k]?.dany||0)) : 0;
     if(!vi&&!vd&&!vg) return;
-    tI+=vi; tD+=vd; tG+=vg;
+    tI+=vi; tD+=vd;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span class="asset-cat" style="background:${ASSET_COLORS[k]}"></span>${k}</td><td style="text-align:right">${vi?fmt(vi):'—'}</td><td style="text-align:right">${vd?fmt(vd):'—'}</td><td style="text-align:right;font-weight:600">${fmt(vi+vd+vg)}</td>`;
+    tr.innerHTML=`<td><span class="asset-cat" style="background:${ASSET_COLORS[k]}"></span>${k}${isConjunta?' <span style="opacity:.6;font-size:.85em">(informativo)</span>':''}</td><td style="text-align:right">${vi?fmt(vi):'—'}</td><td style="text-align:right">${vd?fmt(vd):'—'}</td><td style="text-align:right;font-weight:600">${fmt(vi+vd+vg)}</td>`;
     tbody.appendChild(tr);
   });
-  const tr=document.createElement('tr'); tr.style.fontWeight='700'; tr.innerHTML=`<td>Total</td><td style="text-align:right;color:var(--ines)">${fmt(tI)}</td><td style="text-align:right;color:var(--dany)">${fmt(tD)}</td><td style="text-align:right">${fmt(tI+tD+tG)}</td>`; tbody.appendChild(tr);
+  const tr=document.createElement('tr'); tr.style.fontWeight='700'; tr.innerHTML=`<td>Total</td><td style="text-align:right;color:var(--ines)">${fmt(tI)}</td><td style="text-align:right;color:var(--dany)">${fmt(tD)}</td><td style="text-align:right">${fmt(tI+tD)}</td>`; tbody.appendChild(tr);
   initPerformance();
 }
 
