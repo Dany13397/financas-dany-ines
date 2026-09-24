@@ -3155,7 +3155,7 @@ function renderWeddingTab() {
   const dias = Math.ceil((WEDDING_DATE - hoje) / (1000*60*60*24));
   document.getElementById('w-dias').textContent = dias > 0 ? dias : '🎉';
   document.getElementById('w-data-label').textContent = '16 de Julho de 2027';
-  document.getElementById('w-total').textContent = fmt(total) + (giftsTotal > 0 ? ` <small style="color:var(--green);font-size:13px;font-weight:400">(−${fmt(giftsTotal)} prendas)</small>` : '');
+  document.getElementById('w-total').innerHTML = fmt(total) + (giftsTotal > 0 ? ` <small style="color:var(--green);font-size:13px;font-weight:400">(−${fmt(giftsTotal)} prendas)</small>` : '');
   document.getElementById('w-orcamentado').textContent = fmt(orcamentado);
   document.getElementById('w-orcamentado-pct').textContent = custoTotal > 0 ? Math.round(orcamentado/custoTotal*100)+'% do total' : '';
   document.getElementById('w-pordefinir').textContent = porDefinir + (porDefinir === 1 ? ' item' : ' itens');
