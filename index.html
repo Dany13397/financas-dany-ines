@@ -832,11 +832,11 @@
           <h3>💍 Itens do Casamento</h3>
           <div class="w-item-grid" style="padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:4px">
             <span style="font-size:11px;color:var(--text2);text-transform:uppercase">Item</span>
-            <span></span>
             <div class="w-item-nums" style="display:contents">
               <span style="font-size:11px;color:var(--text2);text-transform:uppercase;text-align:right">Custo</span>
               <span style="font-size:11px;color:var(--text2);text-transform:uppercase;text-align:right">Já Pago</span>
             </div>
+            <span></span>
           </div>
           <div id="w-items-list" style="margin-bottom:16px"></div>
           <div class="form-grid">
@@ -3210,11 +3210,11 @@ function renderWeddingTab() {
           autocapitalize="sentences" autocorrect="off" spellcheck="false" enterkeyhint="next"
           onchange="updateWeddingItem(${i},'nome',this.value)"
           style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:16px;outline:none;width:100%">
-        <button class="w-item-del" onclick="removeWeddingItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1;touch-action:manipulation">✕</button>
         <div class="w-item-nums">
           ${inp(custo, '0', `updateWeddingItem(${i},'custo',this.value)`)}
           ${inp(pago,  '0', `updateWeddingItem(${i},'pago',this.value)`)}
         </div>
+        <button class="w-item-del" onclick="removeWeddingItem(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1;touch-action:manipulation">✕</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div style="flex:1;background:var(--surface2);border-radius:99px;height:4px;overflow:hidden">
