@@ -1258,10 +1258,10 @@ function showInfo(title, desc) {
 }
 
 // ── Breakdown "Para Casa" / "Investido" (ativos que compõem o valor) ──
-const CASA_ASSET_KEYS = ['Conta à Ordem', 'Conta Poupança', 'Certificados de Aforro'];
+const CASA_ASSET_KEYS = ['Conta à Ordem', 'Conta Poupança', 'Certificados de Aforro', 'Trade Republic (Saldo)'];
 const INVEST_ASSET_KEYS = {
-  ines: ['Trade Republic (Carteira)', 'Trade Republic (Saldo)', 'PPR', 'Ações Accenture', 'CGD Pensões'],
-  dany: ['Trade Republic (Carteira)', 'Trade Republic (Saldo)', 'PPR', 'Ações Accenture', 'DEGIRO', 'XTB', 'Trust Wallet']
+  ines: ['Trade Republic (Carteira)', 'PPR', 'Ações Accenture', 'CGD Pensões'],
+  dany: ['Trade Republic (Carteira)', 'PPR', 'Ações Accenture', 'DEGIRO', 'XTB', 'Trust Wallet']
 };
 
 function showCasaBreakdown(person) {
@@ -1321,7 +1321,7 @@ function initInfoButtons() {
     ['kpi-total', 'Patrimônio Total',
       'Soma de todos os ativos de Inês e Dany: contas, poupanças, certificados, investimentos e outros. É o valor bruto total do vosso patrimônio conjunto.'],
     ['kpi-casa', 'Patrimônio Líquido (Para Casa)',
-      'Dinheiro diretamente disponível para a compra de casa: contas à ordem + poupança + conta conjunta + certificados de aforro. Exclui investimentos de longo prazo como PPR, ações e Trade Republic.'],
+      'Dinheiro diretamente disponível para a compra de casa: contas à ordem + poupança + conta conjunta + certificados de aforro + saldo Trade Republic. Exclui investimentos de longo prazo como PPR, ações e carteira Trade Republic.'],
     ['kpi-ines', 'Total Inês',
       'Patrimônio total da Inês — soma de todos os seus ativos individuais e a sua parte nos ativos conjuntos.'],
     ['kpi-dany', 'Total Dany',
@@ -1336,11 +1336,11 @@ function initInfoButtons() {
       'Visão geral do patrimônio do Dany: total, quanto está destinado à casa, e a divisão entre dinheiro líquido (mobilizável) e investimentos de longo prazo.'],
     // ── Dashboard — sub-items das person cards ─────────────────
     ['dash-ines-liquido', 'Líquido — Inês',
-      'Dinheiro da Inês disponível para casa: contas à ordem + poupança + conta conjunta + certificados de aforro. Este valor é mobilizável a curto prazo.'],
+      'Dinheiro da Inês disponível para casa: contas à ordem + poupança + conta conjunta + certificados de aforro + saldo Trade Republic. Este valor é mobilizável a curto prazo.'],
     ['dash-ines-investido', 'Investido — Inês',
-      'Dinheiro da Inês em investimentos de longo prazo (PPR, ações Accenture, Trade Republic carteira, DEGIRO, XTB, CGD Pensões). Não está facilmente acessível para a casa.'],
+      'Dinheiro da Inês em investimentos de longo prazo (PPR, ações Accenture, Trade Republic carteira, CGD Pensões). Não está facilmente acessível para a casa.'],
     ['dash-dany-liquido', 'Líquido — Dany',
-      'Dinheiro do Dany disponível para casa: contas à ordem + poupança + certificados de aforro. Este valor é mobilizável a curto prazo.'],
+      'Dinheiro do Dany disponível para casa: contas à ordem + poupança + certificados de aforro + saldo Trade Republic. Este valor é mobilizável a curto prazo.'],
     ['dash-dany-investido', 'Investido — Dany',
       'Dinheiro do Dany em investimentos de longo prazo (PPR, ações, Trade Republic carteira, DEGIRO, XTB, Trust Wallet). Não está facilmente acessível para a casa.'],
     // ── Dashboard — savings rate card ─────────────────────────
@@ -1357,7 +1357,7 @@ function initInfoButtons() {
     ['chart-total-time', 'Patrimônio Total ao Longo do Tempo',
       'Evolução do valor total de todos os ativos de Inês e Dany combinados. Permite ver a tendência de crescimento global do vosso patrimônio.'],
     ['chart-casa-time', 'Dinheiro para Casa vs Objetivo',
-      'Evolução do dinheiro disponível para comprar casa — inclui contas à ordem, poupança, conjunta e certificados de aforro. Exclui PPR, ações e outros investimentos de longo prazo. A linha vermelha tracejada é o vosso objetivo.'],
+      'Evolução do dinheiro disponível para comprar casa — inclui contas à ordem, poupança, conjunta, certificados de aforro e saldo Trade Republic. Exclui PPR, ações e outros investimentos de longo prazo. A linha vermelha tracejada é o vosso objetivo.'],
     ['chart-individual-time', 'Evolução Individual — Inês vs Dany',
       'Compara a evolução do patrimônio total de cada um ao longo do tempo. Útil para perceber diferenças nas estratégias de poupança.'],
     ['chart-monthly-delta', 'Variação Mensal do Patrimônio',
@@ -1848,8 +1848,8 @@ async function saveEntry() {
   const DANY_KEYS = ['Conta à Ordem','Conta Poupança','Certificados de Aforro','Trade Republic (Carteira)','Trade Republic (Saldo)','PPR','Ações Accenture','DEGIRO','XTB','Trust Wallet'];
   const inesTotal = INES_KEYS.reduce((s,k) => s+(assets[k]?.ines||0), 0);
   const danyTotal = DANY_KEYS.reduce((s,k) => s+(assets[k]?.dany||0), 0);
-  const casaInes = (assets['Conta à Ordem']?.ines||0)+(assets['Conta Poupança']?.ines||0)+(assets['Certificados de Aforro']?.ines||0);
-  const casaDany = (assets['Conta à Ordem']?.dany||0)+(assets['Conta Poupança']?.dany||0)+(assets['Certificados de Aforro']?.dany||0);
+  const casaInes = (assets['Conta à Ordem']?.ines||0)+(assets['Conta Poupança']?.ines||0)+(assets['Certificados de Aforro']?.ines||0)+(assets['Trade Republic (Saldo)']?.ines||0);
+  const casaDany = (assets['Conta à Ordem']?.dany||0)+(assets['Conta Poupança']?.dany||0)+(assets['Certificados de Aforro']?.dany||0)+(assets['Trade Republic (Saldo)']?.dany||0);
 
   const summary = {
     'Total juntos':                    { ines: inesTotal+danyTotal, dany: null },
