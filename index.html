@@ -2768,6 +2768,19 @@ async function addTable() {
   renderMesasTab();
 }
 
+async function renameTable(id) {
+  const tables = getOrInitTables();
+  const t = tables.find(x=>x.id===id);
+  if (!t) return;
+  const novoNome = prompt('Nome da mesa:', t.nome);
+  if (novoNome === null) return;
+  const nomeFinal = novoNome.trim();
+  if (!nomeFinal) return;
+  t.nome = nomeFinal;
+  await saveWeddingConfig();
+  renderMesasTab();
+}
+
 async function removeTable(id) {
   const tables = getOrInitTables();
   const idx = tables.findIndex(t=>t.id===id);
@@ -2901,6 +2914,7 @@ function renderMesasTab() {
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:12px;color:${statusColor};font-weight:600">${count}${isNoivos?'':'/'+TABLE_MAX}</span>
             ${!isNoivos?`<span style="font-size:11px;color:var(--text2)">${pagantes%1===0?pagantes:pagantes.toFixed(1)} pag.</span>`:''}
+            <button onclick="renameTable('${t.id}')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px" title="Editar nome da mesa">✏️</button>
             ${!isNoivos?`<button onclick="removeTable('${t.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px" title="Remover mesa">✕</button>`:''}
           </div>
         </div>
