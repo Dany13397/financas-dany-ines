@@ -1882,7 +1882,9 @@ async function syncFromExcel() {
   btn.disabled = true;
   label.textContent = 'A sincronizar...';
 
-  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mLRVn9SS459fSwYFfnA0KnbKWb9p83fInFTaC685uCs/export?format=csv&gid=37722746';
+  // Um separador por trimestre — adicionar aqui o gid do próximo trimestre
+  const SHEET_GIDS = [37722746, 1011664160, 36732494];
+  const SHEET_URL = gid => `https://docs.google.com/spreadsheets/d/1mLRVn9SS459fSwYFfnA0KnbKWb9p83fInFTaC685uCs/export?format=csv&gid=${gid}`;
   const MESES = { janeiro:'01',fevereiro:'02','março':'03',marco:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12' };
   const NOME_MAP = { 'ppr (não se pode levantar)':'PPR','ppr (nao se pode levantar)':'PPR' };
 
@@ -1924,34 +1926,38 @@ async function syncFromExcel() {
   }
 
   try {
-    const res  = await fetch(SHEET_URL + '&t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — verifica permissões da folha Google`);
-    const text = await res.text();
-    if (!text || !text.trim()) throw new Error('Resposta vazia do Google Sheets — a folha pode não estar partilhada publicamente');
-
-    // Parsear CSV
-    const rows = text.split('\n').map(line => {
-      const cols = []; let cur = ''; let inQ = false;
-      for (let i = 0; i < line.length; i++) {
-        const c = line[i];
-        if (c === '"') { inQ = !inQ; }
-        else if (c === ',' && !inQ) { cols.push(cur); cur = ''; }
-        else cur += c;
-      }
-      cols.push(cur);
-      return cols;
-    });
-
-    // Linha 4 (índice 3): datas dos meses — a cada 3 colunas a partir do índice 2
-    const dataRow = rows[3] || [];
     const mesesCols = [];
-    for (let i = 2; i < dataRow.length; i += 3) {
-      const data = parseData(dataRow[i]);
-      if (data) mesesCols.push({ date: data, ci: i, cd: i + 1 });
+    let ultimoTexto = '';
+    for (const gid of SHEET_GIDS) {
+      const res  = await fetch(SHEET_URL(gid) + '&t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} (separador gid=${gid}) — verifica permissões da folha Google`);
+      const text = await res.text();
+      if (!text || !text.trim()) throw new Error(`Resposta vazia do Google Sheets (separador gid=${gid})`);
+      ultimoTexto = text;
+
+      // Parsear CSV
+      const rows = text.split('\n').map(line => {
+        const cols = []; let cur = ''; let inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const c = line[i];
+          if (c === '"') { inQ = !inQ; }
+          else if (c === ',' && !inQ) { cols.push(cur); cur = ''; }
+          else cur += c;
+        }
+        cols.push(cur);
+        return cols;
+      });
+
+      // Linha 4 (índice 3): datas dos meses — a cada 3 colunas a partir do índice 2
+      const dataRow = rows[3] || [];
+      for (let i = 2; i < dataRow.length; i += 3) {
+        const data = parseData(dataRow[i]);
+        if (data) mesesCols.push({ date: data, ci: i, cd: i + 1, rows });
+      }
     }
 
     if (!mesesCols.length) {
-      const rawPreview = text.slice(0, 400).replace(/</g, '&lt;');
+      const rawPreview = ultimoTexto.slice(0, 400).replace(/</g, '&lt;');
       throw new Error(`Não foi possível ler as datas do Excel\n\nConteúdo bruto (primeiros 400 chars):\n${rawPreview}`);
     }
 
@@ -1971,7 +1977,7 @@ async function syncFromExcel() {
     for (const mc of mesesCols) {
       const assets = {}, summary = {};
       const debugHits = [];
-      for (const row of rows.slice(5)) {
+      for (const row of mc.rows.slice(5)) {
         if (!row || row.length <= mc.ci) continue;
         const nomeRaw = (row[1] || '').trim();
         if (!nomeRaw) continue;
