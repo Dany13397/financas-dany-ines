@@ -1,4 +1,4 @@
-const CACHE = 'financas-v4';
+const CACHE = 'financas-v5';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
@@ -19,6 +19,9 @@ self.addEventListener('fetch', e => {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
+
+  // Google Sheets (sync) — nunca usar cache, senão o sync devolve dados antigos
+  if (url.includes('google.com') || url.includes('googleusercontent.com')) return;
 
   // Supabase — sempre da rede
   if (url.includes('supabase.co')) {

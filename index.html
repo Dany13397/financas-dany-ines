@@ -1924,7 +1924,7 @@ async function syncFromExcel() {
   }
 
   try {
-    const res  = await fetch(SHEET_URL);
+    const res  = await fetch(SHEET_URL + '&t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — verifica permissões da folha Google`);
     const text = await res.text();
     if (!text || !text.trim()) throw new Error('Resposta vazia do Google Sheets — a folha pode não estar partilhada publicamente');
@@ -2024,7 +2024,8 @@ async function syncFromExcel() {
       });
 
       const { error } = await sb.from('entries').upsert({ date: mc.date, assets, summary }, { onConflict: 'date' });
-      if (!error) relatorio.push({ date: mc.date, novo: !jaExistia, diffs, debugHits, ci: mc.ci, cd: mc.cd });
+      if (error) throw new Error(`Falha ao gravar ${mc.date} no Supabase: ${error.message}`);
+      relatorio.push({ date: mc.date, novo: !jaExistia, diffs, debugHits, ci: mc.ci, cd: mc.cd });
     }
 
     await fetchData();
